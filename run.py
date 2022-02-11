@@ -24,21 +24,25 @@ if __name__ == "__main__":
     )
 
     args = parser.parse_args()
+    path_field = args.path_field
+    path_out = args.path_out
+    run = args.run
 
     os.makedirs(args.path_out, exist_ok=True)
 
     cmd = (
         "python -W ignore 0_get_Fink_features_xmatch.py "
-        f"--path_field {args.path_field} --path_out {args.path_out} --run {args.run} "
+        f"--path_field {path_field} --path_out {path_out} --run {run} "
     )
     if args.debug:
         cmd += "--debug"
     subprocess.check_call(shlex.split(cmd))
 
-    fname = args.path_field.split("/")[-1]
+    tmp = Path(path_field).name
+    fname = f"{tmp}_{run}.csv"
     print(f"Features from {fname}")
     cmd = (
         "python -W ignore 1_filter_top_candidates.py "
-        f"--fname {fname}_{args.run}.csv --path_out {args.path_out} "
+        f"--fname {fname} --path_out {path_out} "
     )
     subprocess.check_call(shlex.split(cmd))
