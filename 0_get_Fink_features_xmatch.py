@@ -22,7 +22,10 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Compute candidate features + xmatch")
 
     parser.add_argument(
-        "--path_field", type=str, default="./S82sub8_59.12", help="Path to field",
+        "--path_field", type=str, default="./S82sub8_tmpl", help="Path to field",
+    )
+    parser.add_argument(
+        "--run", type=int, default="12", help="Run number (int next to field/ccd)",
     )
     parser.add_argument(
         "--path_out", type=str, default="./Fink_outputs", help="Path to outputs",
@@ -32,7 +35,7 @@ if __name__ == "__main__":
     os.makedirs(args.path_out, exist_ok=True)
 
     # read files
-    list_files = glob.glob(f"{args.path_field}/*.forced.difflc.txt")
+    list_files = glob.glob(f"{args.path_field}/*/*{args.run}/*.forced.difflc.txt")
     list_idx = []
     list_ra = []
     list_dec = []
@@ -96,5 +99,6 @@ if __name__ == "__main__":
     df["color_avg"] = list_color_avg
     df["ndet"] = list_ndet
 
-    df.to_csv(f"{args.path_out}/{Path(list_files[0]).parent}.csv", index=False)
+    outname = str(Path(list_files[0]).stem).split("_cand")[0]
+    df.to_csv(f"{args.path_out}/{outname}.csv", index=False)
 

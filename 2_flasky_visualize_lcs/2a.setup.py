@@ -10,5 +10,8 @@ if __name__ == "__main__":
     )
     args = parser.parse_args()
 
+    # create symbolic link to data
     os.symlink(args.path_field, "static")
 
+    # create annotated folder
+    os.makedirs("annotated", exist_ok=True)
