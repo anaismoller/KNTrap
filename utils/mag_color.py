@@ -7,6 +7,7 @@ from astropy.time import Time
 
 # ["g", "r", "i", "z"], value=[1, 2, 3, 4]
 dic_filters = {1: "g", 2: "r", 3: "i", 4: "z"}
+pd.options.mode.chained_assignment = None
 
 
 def i_minus_g(fid, mag):
@@ -82,7 +83,7 @@ def extract_delta_color(pdf: pd.DataFrame, smooth_by: float):
 
     # for color (can be modified to take median mag)
     # group by night
-    pdf["mjd_int"] = pdf.mjd.astype(int).values
+    pdf["mjd_int"] = pdf["mjd"].astype(int).values
     gpdf = pdf.groupby("mjd_int")[["filter", "mjd", "magnitude"]].agg(list)
     # take only nights with at least measurements on 2 different filters
     mask = gpdf["filter"].apply(lambda x: (len(x) > 1) & (np.sum(x) / len(x) != x[0]))
