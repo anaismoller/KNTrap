@@ -4,15 +4,68 @@
 import os
 import glob
 import argparse
+import numpy as np
 import pandas as pd
+from tqdm import tqdm
 from pathlib import Path
+from functools import partial
 from astropy.table import Table
 from astropy import units as u
 from astropy.coordinates import SkyCoord
+import multiprocessing
+from concurrent.futures import ProcessPoolExecutor
 
 # my utils
 from utils import xmatch
 from utils import mag_color
+
+
+def process_fn(inputs):
+    fn, fil = inputs
+    return fn(fil)
+
+
+def process_single_file(fname):
+    # read file and convert to pandas
+    df_tmp = Table.read(fname, format="ascii").to_pandas()
+
+    # get id
+    idx = Path(fname).stem.replace(".forced.difflc", "")
+
+    # get ra,dec, idx for xmatch
+    ra_tmp, dec_tmp = df_tmp["ra"][0], df_tmp["dec"][0]
+    # convert to degrees
+    coo = SkyCoord(ra_tmp, dec_tmp, unit=(u.hourangle, u.deg))
+    out_ra = coo.ra.degree
+    out_dec = coo.dec.degree
+
+    # get color, dmag and rate
+    (
+        dmag_i,
+        dmag_r,
+        dmag_rate_r,
+        dmag_rate_i,
+        color,
+        color_avg,
+    ) = mag_color.last_color_rate(df_tmp)
+
+    ndet = len(df_tmp)
+    # clean
+    del df_tmp
+
+    df_out = pd.DataFrame()
+    df_out["id"] = [idx]
+    df_out["ra"] = [out_ra]
+    df_out["dec"] = [out_dec]
+    df_out["dmag_i"] = [dmag_i]
+    df_out["dmag_r"] = [dmag_r]
+    df_out["dmag_rate_i"] = [dmag_rate_i]
+    df_out["dmag_rate_r"] = [dmag_rate_r]
+    df_out["color"] = [color]
+    df_out["color_avg"] = [color_avg]
+    df_out["ndet"] = [ndet]
+
+    return df_out
 
 
 if __name__ == "__main__":
@@ -30,74 +83,56 @@ if __name__ == "__main__":
     parser.add_argument(
         "--path_out", type=str, default="./Fink_outputs", help="Path to outputs",
     )
+    parser.add_argument(
+        "--debug", action="store_true", help="Debug: one file processed only",
+    )
     args = parser.parse_args()
 
     os.makedirs(args.path_out, exist_ok=True)
 
     # read files
     list_files = glob.glob(f"{args.path_field}/*/*{args.run}/*.forced.difflc.txt")
-    list_idx = []
-    list_ra = []
-    list_dec = []
-    list_dmag_i = []
-    list_dmag_r = []
-    list_dmag_rate_i = []
-    list_dmag_rate_r = []
-    list_color = []
-    list_color_avg = []
-    list_ndet = []
-    for fname in list_files:
-        # read file and convert to pandas
-        df_tmp = Table.read(fname, format="ascii").to_pandas()
 
-        # get id
-        list_idx.append(Path(fname).stem.replace(".forced.difflc", ""))
+    if args.debug:
+        # no parallel
+        df = process_single_file(list_files[0])
 
-        # get ra,dec, idx for xmatch
-        ra_tmp, dec_tmp = df_tmp["ra"][0], df_tmp["dec"][0]
-        # convert to degrees
-        coo = SkyCoord(ra_tmp, dec_tmp, unit=(u.hourangle, u.deg))
-        list_ra.append(coo.ra.degree)
-        list_dec.append(coo.dec.degree)
+    else:
+        # Read and process files faster with ProcessPoolExecutor
+        max_workers = multiprocessing.cpu_count()
+        # use parallelization to speed up processing
+        # Split list files in chunks of size 10 or less
+        # to get a progress bar and alleviate memory constraints
+        num_elem = len(list_files)
+        num_chunks = num_elem // 10 + 1
+        list_chunks = np.array_split(np.arange(num_elem), num_chunks)
 
-        # get color, dmag and rate
-        (
-            dmag_i,
-            dmag_r,
-            dmag_rate_r,
-            dmag_rate_i,
-            color,
-            color_avg,
-        ) = mag_color.last_color_rate(df_tmp)
+        process_fn_file = partial(process_single_file)
 
-        list_dmag_i.append(dmag_i)
-        list_dmag_r.append(dmag_r)
-        list_dmag_rate_i.append(dmag_rate_i)
-        list_dmag_rate_r.append(dmag_rate_r)
-        list_color.append(color)
-        list_color_avg.append(color_avg)
-        list_ndet.append(len(df_tmp))
+        list_fn = []
+        for fmt in list_files:
+            list_fn.append(process_fn_file)
+        list_processed = []
+        for chunk_idx in tqdm(list_chunks, desc="Preprocess", ncols=100):
+            # Process each file in the chunk in parallel
+            with ProcessPoolExecutor(max_workers=max_workers) as executor:
+                start, end = chunk_idx[0], chunk_idx[-1] + 1
+                # Need to cast to list because executor returns an iterator
+                list_pairs = list(zip(list_fn[start:end], list_files[start:end]))
+                list_processed += list(executor.map(process_fn, list_pairs))
 
-        # clean
-        del df_tmp
+        df = pd.concat(list_processed)
 
     # x match
-    z, sptype, typ, ctlg = xmatch.cross_match_simbad(list_idx, list_ra, list_dec)
+    z, sptype, typ, ctlg = xmatch.cross_match_simbad(
+        df["id"].to_list(), df["ra"].to_list(), df["dec"].to_list()
+    )
 
     # save in df
-    df = pd.DataFrame()
-    df["id"] = list_idx
     df["simbad_type"] = typ
     df["simbad_ctlg"] = ctlg
     df["simbad_sptype"] = sptype
     df["simbad_redshift"] = z
-    df["dmag_i"] = list_dmag_i
-    df["dmag_r"] = list_dmag_r
-    df["dmag_rate_i"] = list_dmag_rate_i
-    df["dmag_rate_r"] = list_dmag_rate_r
-    df["color"] = list_color
-    df["color_avg"] = list_color_avg
-    df["ndet"] = list_ndet
 
     outname = str(Path(list_files[0]).stem).split("_cand")[0]
     df.to_csv(f"{args.path_out}/{outname}.csv", index=False)
