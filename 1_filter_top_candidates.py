@@ -4,6 +4,7 @@
 import argparse
 import pandas as pd
 from datetime import datetime
+from pathlib import Path
 
 list_simbad_galaxies = [
     "galaxy",
@@ -53,7 +54,8 @@ if __name__ == "__main__":
     df_sel = df[cut_simbad & cut_rate]
 
     # add date tag
-    tt = datetime.now()
-    date_to_print = tt.strftime("%Y%m%d")
-    df_sel.to_csv(f"{args.path_out}/selected_{date_to_print}.csv", index=False)
+    # tt = datetime.now()
+    # date_to_print = tt.strftime("%Y%m%d")
+    out_prefix = Path(args.fname).stem
+    df_sel.to_csv(f"{args.path_out}/selected_{out_prefix}.csv", index=False)
 
