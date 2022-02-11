@@ -134,6 +134,6 @@ if __name__ == "__main__":
     df["simbad_sptype"] = sptype
     df["simbad_redshift"] = z
 
-    outname = str(Path(list_files[0]).stem).split("_cand")[0]
-    df.to_csv(f"{args.path_out}/{outname}.csv", index=False)
+    outname = str(Path(args.path_field).stem)
+    df.to_csv(f"{args.path_out}/{outname}_{args.run}.csv", index=False)
 
