@@ -2,7 +2,9 @@
 # Authors: Anais Möller based on fink-broker.org code
 
 import os
+import sys
 import glob
+import logging
 import argparse
 import numpy as np
 import pandas as pd
@@ -18,6 +20,29 @@ from concurrent.futures import ProcessPoolExecutor
 # my utils
 from utils import xmatch
 from utils import mag_color
+
+
+def setup_logging():
+    logger = None
+
+    # Create logger using python logging module
+    logging_handler_out = logging.StreamHandler(sys.stdout)
+    logging_handler_out.setLevel(logging.DEBUG)
+
+    logging_handler_err = logging.StreamHandler(sys.stderr)
+    logging_handler_err.setLevel(logging.WARNING)
+
+    logger = logging.getLogger("localLogger")
+    logger.setLevel(logging.INFO)
+    logger.addHandler(logging_handler_out)
+    logger.addHandler(logging_handler_err)
+
+    # create file handler which logs even debug messages
+    fh = logging.FileHandler("logpaper.log", mode="w")
+    fh.setLevel(logging.DEBUG)
+    logger.addHandler(fh)
+
+    return logger
 
 
 def process_fn(inputs):
@@ -69,33 +94,56 @@ def process_single_file(fname):
 
 
 if __name__ == "__main__":
-    """ Process light-curves with Fink inspired features & xmatches
+    """Process light-curves with Fink inspired features & xmatches
     https://github.com/astrolabsoftware/fink-filters
     """
     parser = argparse.ArgumentParser(description="Compute candidate features + xmatch")
 
     parser.add_argument(
-        "--path_field", type=str, default="./S82sub8_tmpl", help="Path to field",
+        "--path_field",
+        type=str,
+        default="./S82sub8_tmpl",
+        help="Path to field",
     )
     parser.add_argument(
-        "--run", type=int, default="12", help="Run number (int next to field/ccd)",
+        "--run",
+        type=int,
+        default="12",
+        help="Run number (int next to field/ccd)",
     )
     parser.add_argument(
-        "--path_out", type=str, default="./Fink_outputs", help="Path to outputs",
+        "--path_out",
+        type=str,
+        default="./Fink_outputs",
+        help="Path to outputs",
     )
     parser.add_argument(
-        "--debug", action="store_true", help="Debug: one file processed only",
+        "--debug",
+        action="store_true",
+        help="Debug: loop processing (slow)",
+    )
+    parser.add_argument(
+        "--test",
+        action="store_true",
+        help="one file processed only",
     )
     args = parser.parse_args()
 
     os.makedirs(args.path_out, exist_ok=True)
 
+    logger = setup_logging()
+
     # read files
     list_files = glob.glob(f"{args.path_field}/*/*{args.run}/*.forced.difflc.txt")
 
-    if args.debug:
-        # no parallel
+    if args.test:
+        print("Processing only one file", list_files[0])
         df = process_single_file(list_files[0])
+    elif args.debug:
+        # no parallel
+        for fil in list_files:
+            logger.info(fil)
+            df = process_single_file(fil)
 
     else:
         # Read and process files faster with ProcessPoolExecutor
@@ -113,7 +161,7 @@ if __name__ == "__main__":
         for fmt in list_files:
             list_fn.append(process_fn_file)
         list_processed = []
-        for chunk_idx in tqdm(list_chunks, desc="Preprocess", ncols=100):
+        for chunk_idx in tqdm(list_chunks, desc="Process", ncols=100):
             # Process each file in the chunk in parallel
             with ProcessPoolExecutor(max_workers=max_workers) as executor:
                 start, end = chunk_idx[0], chunk_idx[-1] + 1
@@ -136,4 +184,3 @@ if __name__ == "__main__":
 
     outname = str(Path(args.path_field).stem)
     df.to_csv(f"{args.path_out}/{outname}_{args.run}.csv", index=False)
-

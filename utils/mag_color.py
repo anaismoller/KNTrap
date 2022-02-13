@@ -11,8 +11,7 @@ pd.options.mode.chained_assignment = None
 
 
 def i_minus_g(fid, mag):
-    """ Compute i-g based on vectors of filters and magnitudes
-    """
+    """Compute i-g based on vectors of filters and magnitudes"""
 
     if list(set(fid)) == [1, 3]:
         # last measurement
@@ -32,29 +31,30 @@ def i_minus_g(fid, mag):
 
 
 def extract_delta_color(pdf: pd.DataFrame, smooth_by: float):
-    """ Extract last i-g and delta mag for each object
-    
+    """Extract last i-g and delta mag for each object
+
     Modified from Fink https://github.com/astrolabsoftware/fink-science-portal/apps/utils.py
     Adding a grouping for a given mjd interval
-    
+
     Parameters
     ----------
     pdf: pandas DataFrame
         DataFrame containing magnitude, mjd, filters
-        Filter band, as integer. g: 1, r: 2, i: 3, z:4 
+        Filter band, as integer. g: 1, r: 2, i: 3, z:4
     smooth_by: float
         MJD delta to smooth computation
 
     Returns
     ----------
 
-    
+
     """
 
     # dmag, rate for each filter
     dic_dmag = {1: [], 2: [], 3: [], 4: []}
     dic_dmag_mjd = {1: [], 2: [], 3: [], 4: []}
     dic_rate = {1: [], 2: [], 3: [], 4: []}
+
     for fil in pdf["filter"].unique():
         subpdf = pdf[pdf["filter"] == fil]
         subpdf = subpdf.sort_values("mjd", ascending=False)
@@ -106,10 +106,10 @@ def extract_delta_color(pdf: pd.DataFrame, smooth_by: float):
 
 
 def last_color_rate(df_tmp):
-    """ Compute color and rate for a light-curve
+    """Compute color and rate for a light-curve
 
     Return:
-    - dmag_i : last delta magnitude in i 
+    - dmag_i : last delta magnitude in i
     """
 
     # If daily cadence then = rate
