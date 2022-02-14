@@ -1,11 +1,12 @@
 #!/usr/bin/env python
 
-""" submit_slurm_ozstar.py -- Input fieldname, filterband, ctio_caldate, fitsextension, create a bash shell script to run the entire KNTraP pipeline, and submit it as a slurm job on OzStar. 
+""" submit_slurm_ozstar.py -- Input fieldname, run, create a bash shell script to run the entire KNTraP pipeline, and submit it as a slurm job on OzStar. 
 
-Usage: submit_slurm_ozstar [-h] [-q] [-v] [--debug] [--overwrite] [--do_not_submit] [--kntrap_sel_path STRING] [--conda_env_name STRING] [--kntrap_data_dir STRING] [--outdir STRING] [--ozstar_reservation STRING] <fieldname>  
+Usage: submit_slurm_ozstar [-h] [-q] [-v] [--debug] [--overwrite] [--do_not_submit] [--kntrap_sel_path STRING] [--conda_env_name STRING] [--kntrap_data_dir STRING] [--outdir STRING] [--ozstar_reservation STRING] <fieldname> <run>
 
 Arguments:
     fieldname (string)
+    run (string)
 
 Options:
     -h, --help                          Show this screen
@@ -15,9 +16,9 @@ Options:
     --overwrite                         Overwrite any existing files at destination [default: False]
     --do_not_submit                     Just write the slurm script and pipeline bash scripts, don't submit via sbatch [default: False]
     --kntrap_sel_path STRING            Where src for KNTraP project lives [default: /fred/oz100/NOAO_archive/KNTraP_Project/src/KNTraP/]
-    --conda_env_name STRING             Python conda environment name [default: kntrap]
+    --conda_env_name STRING             Python conda environment name [default: anais]
     --kntrap_data_dir STRING            KNTraP data and working directory [default: /fred/oz100/NOAO_archive/KNTraP_Project/kntrappipe]
-    --outdir STRING                     Output the bash script here. If not set, will output in kntrap_data_dir/logs/ozstar/<fieldname>
+    --outdir STRING                     Output the bash script here. If not set, will output in kntrap_data_dir/logs/ozstar/<fieldname>_<run>
     --ozstar_reservation STRING         If set, in sbatch script put #SBATCH --reservation={ozstar_reservation}
 
 Examples:
@@ -68,6 +69,7 @@ echo Slurm Job JOB_NAME done in $(($duration / 60)) minutes and $(($duration % 6
 
 def submit_slurm_ozstar(
     fieldname,
+    run,
     kntrap_sel_path="/fred/oz100/NOAO_archive/KNTraP_Project/photpipe/v20.0/DECAMNOAO/KNTraP/KNTrap_selection",
     conda_env_name="kntrap",
     kntrap_data_dir="/fred/oz100/NOAO_archive/KNTraP_Project/photpipe/v20.0/DECAMNOAO/KNTraP/web/web/sniff/",
@@ -83,6 +85,7 @@ def submit_slurm_ozstar(
     # Create the bash script
     kntrap_bashscript_path = write_kntrap_bashscript.write_kntrap_bashscript(
         fieldname,
+        run,
         kntrap_sel_path=kntrap_sel_path,
         conda_env_name=conda_env_name,
         kntrap_data_dir=kntrap_data_dir,
@@ -94,7 +97,7 @@ def submit_slurm_ozstar(
     )  # overwrite function not implemented yet
 
     # Define slurm job name
-    slurm_job_name = f"{fieldname}"
+    slurm_job_name = f"{fieldname}_{run}"
 
     # Figure out where to save the bash script
     slurm_script_dir = kntrap_sel_path + "/logs/"
@@ -108,6 +111,7 @@ def submit_slurm_ozstar(
     script_string = script_string.replace("PIPE_DATA_DIR", kntrap_data_dir)
     script_string = script_string.replace("JOB_BASH_SCRIPT", kntrap_bashscript_path)
     script_string = script_string.replace("FIELDNAME", fieldname)
+    script_string = script_string.replace("RUN", run)
     if ozstar_reservation == None:
         script_string = script_string.replace("RESERVATION_LINE", "")
     else:
@@ -163,6 +167,7 @@ if __name__ == "__main__":
     do_not_submit = arguments["--do_not_submit"]
     # Required arguments
     fieldname = arguments["<fieldname>"]
+    run = arguments["<run>"]
     # Optional arguments (with defaults set)
     kntrap_sel_path = arguments["--kntrap_sel_path"]
     conda_env_name = arguments["--conda_env_name"]
@@ -174,6 +179,7 @@ if __name__ == "__main__":
 
     _ = submit_slurm_ozstar(
         fieldname,
+        run,
         kntrap_sel_path=kntrap_sel_path,
         conda_env_name=conda_env_name,
         kntrap_data_dir=kntrap_data_dir,
