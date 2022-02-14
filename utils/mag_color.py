@@ -115,28 +115,31 @@ def last_color_rate(df_tmp):
     # If daily cadence then = rate
     smooth_by = 1
 
-    # eliminate empty mags
-    df_tmp = df_tmp[df_tmp["m"] != "-"]
-    df_tmp["magnitude"] = df_tmp["m"].astype(np.float).copy()
+    if set(["m", "filt", "dateobs"]).issubset(df_tmp.keys()):
+        # eliminate empty mags
+        df_tmp = df_tmp[df_tmp["m"] != "-"]
+        df_tmp["magnitude"] = df_tmp["m"].astype(np.float).copy()
 
-    # variable reformatting
-    t = Time(df_tmp["dateobs"].to_list(), format="isot", scale="utc")
-    df_tmp["mjd"] = t.mjd.astype(float).copy()
-    df_tmp["filter"] = (
-        df_tmp["filt"]
-        .replace(to_replace=["g", "r", "i", "z"], value=[1, 2, 3, 4])
-        .copy()
-    )
+        # variable reformatting
+        t = Time(df_tmp["dateobs"].to_list(), format="isot", scale="utc")
+        df_tmp["mjd"] = t.mjd.astype(float).copy()
+        df_tmp["filter"] = (
+            df_tmp["filt"]
+            .replace(to_replace=["g", "r", "i", "z"], value=[1, 2, 3, 4])
+            .copy()
+        )
 
-    dic_dmag, dic_dmag_mjd, dic_rate, color, color_mjd = extract_delta_color(
-        df_tmp, smooth_by=smooth_by
-    )
+        dic_dmag, dic_dmag_mjd, dic_rate, color, color_mjd = extract_delta_color(
+            df_tmp, smooth_by=smooth_by
+        )
 
-    dmag_i = dic_dmag[2][-1] if len(dic_dmag[2]) > 0 else np.nan
-    dmag_r = dic_dmag[3][-1] if len(dic_dmag[3]) > 0 else np.nan
-    dmag_rate_i = dic_rate[2][-1] if len(dic_rate[2]) > 0 else np.nan
-    dmag_rate_r = dic_rate[3][-1] if len(dic_rate[3]) > 0 else np.nan
-    last_color = color[-1] if len(color) > 0 else np.nan
-    color_avg = np.array(color).mean() if len(color) > 0 else np.nan
+        dmag_i = dic_dmag[2][-1] if len(dic_dmag[2]) > 0 else np.nan
+        dmag_r = dic_dmag[3][-1] if len(dic_dmag[3]) > 0 else np.nan
+        dmag_rate_i = dic_rate[2][-1] if len(dic_rate[2]) > 0 else np.nan
+        dmag_rate_r = dic_rate[3][-1] if len(dic_rate[3]) > 0 else np.nan
+        last_color = color[-1] if len(color) > 0 else np.nan
+        color_avg = np.array(color).mean() if len(color) > 0 else np.nan
 
-    return dmag_i, dmag_r, dmag_rate_r, dmag_rate_i, last_color, color_avg
+        return dmag_i, dmag_r, dmag_rate_r, dmag_rate_i, last_color, color_avg
+    else:
+        return np.nan, np.nan, np.nan, np.nan, np.nan, np.nan

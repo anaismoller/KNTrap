@@ -52,44 +52,50 @@ def process_fn(inputs):
 
 def process_single_file(fname):
     # read file and convert to pandas
-    df_tmp = Table.read(fname, format="ascii").to_pandas()
+    try:
+        df_tmp = Table.read(fname, format="ascii").to_pandas()
+        if set(["ra", "dec"]).issubset(df_tmp.keys()):
+            # get id
+            idx = Path(fname).stem.replace(".forced.difflc", "")
 
-    # get id
-    idx = Path(fname).stem.replace(".forced.difflc", "")
+            # get ra,dec, idx for xmatch
+            ra_tmp, dec_tmp = df_tmp["ra"][0], df_tmp["dec"][0]
+            # convert to degrees
+            coo = SkyCoord(ra_tmp, dec_tmp, unit=(u.hourangle, u.deg))
+            out_ra = coo.ra.degree
+            out_dec = coo.dec.degree
 
-    # get ra,dec, idx for xmatch
-    ra_tmp, dec_tmp = df_tmp["ra"][0], df_tmp["dec"][0]
-    # convert to degrees
-    coo = SkyCoord(ra_tmp, dec_tmp, unit=(u.hourangle, u.deg))
-    out_ra = coo.ra.degree
-    out_dec = coo.dec.degree
+            # get color, dmag and rate
+            (
+                dmag_i,
+                dmag_r,
+                dmag_rate_r,
+                dmag_rate_i,
+                color,
+                color_avg,
+            ) = mag_color.last_color_rate(df_tmp)
 
-    # get color, dmag and rate
-    (
-        dmag_i,
-        dmag_r,
-        dmag_rate_r,
-        dmag_rate_i,
-        color,
-        color_avg,
-    ) = mag_color.last_color_rate(df_tmp)
+            ndet = len(df_tmp)
+            # clean
+            del df_tmp
 
-    ndet = len(df_tmp)
-    # clean
-    del df_tmp
+            df_out = pd.DataFrame()
+            df_out["id"] = [idx]
+            df_out["ra"] = [out_ra]
+            df_out["dec"] = [out_dec]
+            df_out["dmag_i"] = [dmag_i]
+            df_out["dmag_r"] = [dmag_r]
+            df_out["dmag_rate_i"] = [dmag_rate_i]
+            df_out["dmag_rate_r"] = [dmag_rate_r]
+            df_out["color"] = [color]
+            df_out["color_avg"] = [color_avg]
+            df_out["ndet"] = [ndet]
 
-    df_out = pd.DataFrame()
-    df_out["id"] = [idx]
-    df_out["ra"] = [out_ra]
-    df_out["dec"] = [out_dec]
-    df_out["dmag_i"] = [dmag_i]
-    df_out["dmag_r"] = [dmag_r]
-    df_out["dmag_rate_i"] = [dmag_rate_i]
-    df_out["dmag_rate_r"] = [dmag_rate_r]
-    df_out["color"] = [color]
-    df_out["color_avg"] = [color_avg]
-    df_out["ndet"] = [ndet]
-
+        else:
+            df_out = pd.DataFrame()
+    except Exception:
+        print("File corrupted or not readable", fname)
+        df_out = pd.DataFrame()
     return df_out
 
 
@@ -137,14 +143,17 @@ if __name__ == "__main__":
     list_files = glob.glob(f"{args.path_field}/*/*{args.run}/*.forced.difflc.txt")
 
     if args.test:
+        print(list_files)
         print("Processing only one file", list_files[0])
         df = process_single_file(list_files[0])
     elif args.debug:
+        print(list_files)
         # no parallel
+        list_proc = []
         for fil in list_files:
             logger.info(fil)
-            df = process_single_file(fil)
-
+            list_proc.append(process_single_file(fil))
+        df = pd.concat(list_proc)
     else:
         # Read and process files faster with ProcessPoolExecutor
         max_workers = multiprocessing.cpu_count()
@@ -170,7 +179,6 @@ if __name__ == "__main__":
                 list_processed += list(executor.map(process_fn, list_pairs))
 
         df = pd.concat(list_processed)
-
     # x match
     z, sptype, typ, ctlg = xmatch.cross_match_simbad(
         df["id"].to_list(), df["ra"].to_list(), df["dec"].to_list()
