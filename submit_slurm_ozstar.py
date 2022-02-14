@@ -47,9 +47,9 @@ batch_script_template = """#!/bin/bash
 
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=1
-#SBATCH --cpus-per-task=2
-#SBATCH --time=10:00
-#SBATCH --mem-per-cpu=8G
+#SBATCH --cpus-per-task=8
+#SBATCH --time=1:00
+#SBATCH --mem-per-cpu=800
 RESERVATION_LINE
 
 echo Slurm Job JOB_NAME start
