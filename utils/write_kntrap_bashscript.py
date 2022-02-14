@@ -17,7 +17,7 @@ Options:
     --kntrap_sel_path STRING            Where src for KNTraP project lives [default: ./src/KNTraP/]
     --conda_env_name STRING             Python conda environment name [default: anais]
     --kntrap_data_dir STRING            KNTraP data and working directory [default: ./kntrappipe]
-    --outdir STRING                     Output the bash script here. If not set, will output in kntrap_data_dir/logs/ozstar/<fieldname>/. 
+    --outdir STRING                     Output the bash script here. If not set, will output in kntrap_sel_path/logs/ozstar/<fieldname>
 
 Examples:
     python write_kntrap_bashscript.py GRB210605A5
@@ -47,9 +47,9 @@ python src_dir/run.py --path_field kntrap_data_dir/fieldname --run runnumber
 def write_kntrap_bashscript(
     fieldname,
     run,
-    kntrap_sel_path="./src/KNTraP/",
+    kntrap_sel_path="./KNTrap_selection",
     conda_env_name="anais",
-    kntrap_data_dir="./kntrappipe",
+    kntrap_data_dir="./data",
     outdir=None,
     verbose=False,
     debugmode=False,
@@ -68,7 +68,7 @@ def write_kntrap_bashscript(
 
     # Figure out where to save the bash script
     if outdir == None:
-        bash_script_dir = kntrap_data_dir + f"/logs/ozstar/{fieldname}/"
+        bash_script_dir = kntrap_sel_path + f"/logs/ozstar/{fieldname}/"
     else:
         bash_script_dir = outdir
     bash_script_path = bash_script_dir + f"/kntrappipe_{fieldname}.sh"
@@ -105,8 +105,7 @@ if __name__ == "__main__":
     quietmode = arguments["--quietmode"]
     # Required arguments
     fieldname = arguments["<fieldname>"]
-    ctio_caldate = arguments["<ctio_caldate>"]
-    filterband = arguments["<filterband>"]
+    run = arguments["<run>"]
     fitsextension = arguments["<fitsextension>"]
     # Optional arguments (with defaults set)
     kntrap_sel_path = arguments["--kntrap_sel_path"]
@@ -118,6 +117,7 @@ if __name__ == "__main__":
 
     _ = write_kntrap_bashscript(
         fieldname,
+        run,
         kntrap_sel_path=kntrap_sel_path,
         conda_env_name=conda_env_name,
         kntrap_data_dir=kntrap_data_dir,

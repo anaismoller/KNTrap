@@ -48,7 +48,7 @@ batch_script_template = """#!/bin/bash
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=1
 #SBATCH --cpus-per-task=8
-#SBATCH --time=1:00
+#SBATCH --time=60:00
 #SBATCH --mem-per-cpu=800
 RESERVATION_LINE
 
