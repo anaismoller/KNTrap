@@ -22,7 +22,7 @@ from utils import xmatch
 from utils import mag_color
 
 
-def setup_logging():
+def setup_logging(logname):
     logger = None
 
     # Create logger using python logging module
@@ -38,7 +38,7 @@ def setup_logging():
     logger.addHandler(logging_handler_err)
 
     # create file handler which logs even debug messages
-    fh = logging.FileHandler("logpaper.log", mode="w")
+    fh = logging.FileHandler(f"logs/{logname}.log", mode="w")
     fh.setLevel(logging.DEBUG)
     logger.addHandler(fh)
 
@@ -73,6 +73,8 @@ def process_single_file(fname):
                 dmag_rate_i,
                 color,
                 color_avg,
+                max_mag_i,
+                max_mag_r,
             ) = mag_color.last_color_rate(df_tmp)
 
             ndet = len(df_tmp)
@@ -83,6 +85,8 @@ def process_single_file(fname):
             df_out["id"] = [idx]
             df_out["ra"] = [out_ra]
             df_out["dec"] = [out_dec]
+            df_out["max_mag_i"] = [max_mag_i]
+            df_out["max_mag_"] = [max_mag_r]
             df_out["dmag_i"] = [dmag_i]
             df_out["dmag_r"] = [dmag_r]
             df_out["dmag_rate_i"] = [dmag_rate_i]
@@ -136,8 +140,10 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     os.makedirs(args.path_out, exist_ok=True)
+    os.makedirs("logs/", exist_ok=True)
 
-    logger = setup_logging()
+    logname = f"{Path(args.path_field).stem}_{args.run}_preprocess"
+    logger = setup_logging(logname)
 
     # read files
     list_files = glob.glob(f"{args.path_field}/*/*{args.run}/*.forced.difflc.txt")
