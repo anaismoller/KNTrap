@@ -2,7 +2,7 @@
 
 """ write_kntrap_bashscript.py -- Input fieldname, create a bash shell script to run the entire KNTraP pipeline. 
 
-Usage: write_kntrap_bashscript [-h] [-q] [-v] [--debug] [--overwrite] [--kntrap_sel_path STRING] [--conda_env_name STRING] [--kntrap_data_dir STRING] [--outdir STRING] <fieldname> <run> 
+Usage: write_kntrap_bashscript [-h] [-q] [-v] [--debug] [--overwrite] [--kntrap_sel_path STRING] [--conda_env_name STRING] [--kntrap_data_dir STRING] [--outdir STRING] [--pathout STRING] <fieldname> <run> 
 
 Arguments:
     fieldname (string)
@@ -18,6 +18,7 @@ Options:
     --conda_env_name STRING             Python conda environment name [default: anais]
     --kntrap_data_dir STRING            KNTraP data and working directory [default: /fred/oz100/NOAO_archive/KNTraP_Project/photpipe/v20.0/DECAMNOAO/KNTraP/web/web/sniff/]
     --outdir STRING                     Output the bash script here. If not set, will output in kntrap_sel_path/logs/ozstar/<fieldname>
+    --path_out STRING                   Output the processed data [default: /fred/oz100/NOAO_archive/KNTraP_Project/photpipe/v20.0/DECAMNOAO/KNTraP/KNTrap_selection/Fink_outputs]
 
 Examples:
     python write_kntrap_bashscript.py GRB210605A5
@@ -51,6 +52,7 @@ def write_kntrap_bashscript(
     conda_env_name="anais",
     kntrap_data_dir="./data",
     outdir=None,
+    pathout=None,
     verbose=False,
     debugmode=False,
     quietmode=False,
@@ -65,6 +67,7 @@ def write_kntrap_bashscript(
     script_string = script_string.replace("src_dir", kntrap_sel_path)
     script_string = script_string.replace("fieldname", fieldname)
     script_string = script_string.replace("runnumber", runnumber)
+    script_string = script_string.replace("pathoutname", pathout)
 
     # Figure out where to save the bash script
     if outdir == None:
@@ -72,8 +75,6 @@ def write_kntrap_bashscript(
     else:
         bash_script_dir = outdir
     bash_script_path = bash_script_dir + f"/kntrapsel_{fieldname}.sh"
-
-    script_string = script_string.replace("pathoutname", bash_script_dir)
 
     # Create output directory if not exist
     os.makedirs(bash_script_dir, exist_ok=True)
@@ -114,6 +115,7 @@ if __name__ == "__main__":
     conda_env_name = arguments["--conda_env_name"]
     kntrap_data_dir = arguments["--kntrap_data_dir"]
     outdir = arguments["--outdir"]
+    pathout = arguments["--pathout"]
     # Not implemented arguments (to be implemented later)
     overwrite = arguments["--overwrite"]
 
@@ -124,6 +126,7 @@ if __name__ == "__main__":
         conda_env_name=conda_env_name,
         kntrap_data_dir=kntrap_data_dir,
         outdir=outdir,
+        pathout=pathout,
         verbose=verbose,
         debugmode=debugmode,
         quietmode=quietmode,
