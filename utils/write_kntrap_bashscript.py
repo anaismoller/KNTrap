@@ -14,9 +14,9 @@ Options:
     -v, --verbose                       Print extra info to screen. [default: False]
     --debug                             Print debugging info to screen. [default: False]
     --overwrite                         Overwrite any existing files at destination [default: False]
-    --kntrap_sel_path STRING            Where src for KNTraP project lives [default: ./src/KNTraP/]
+    --kntrap_sel_path STRING            Where src for KNTraP project lives [default: /fred/oz100/NOAO_archive/KNTraP_Project/photpipe/v20.0/DECAMNOAO/KNTraP/KNTrap_selection]
     --conda_env_name STRING             Python conda environment name [default: anais]
-    --kntrap_data_dir STRING            KNTraP data and working directory [default: ./kntrappipe]
+    --kntrap_data_dir STRING            KNTraP data and working directory [default: /fred/oz100/NOAO_archive/KNTraP_Project/photpipe/v20.0/DECAMNOAO/KNTraP/web/web/sniff/]
     --outdir STRING                     Output the bash script here. If not set, will output in kntrap_sel_path/logs/ozstar/<fieldname>
 
 Examples:
@@ -46,7 +46,7 @@ python src_dir/run.py --path_field kntrap_data_dir/fieldname --run runnumber --p
 
 def write_kntrap_bashscript(
     fieldname,
-    run,
+    runnumber,
     kntrap_sel_path="./KNTrap_selection",
     conda_env_name="anais",
     kntrap_data_dir="./data",
@@ -64,14 +64,14 @@ def write_kntrap_bashscript(
     script_string = script_string.replace("CONDA_ENV_NAME", conda_env_name)
     script_string = script_string.replace("src_dir", kntrap_sel_path)
     script_string = script_string.replace("fieldname", fieldname)
-    script_string = script_string.replace("runnumber", run)
+    script_string = script_string.replace("runnumber", runnumber)
 
     # Figure out where to save the bash script
     if outdir == None:
         bash_script_dir = kntrap_sel_path + f"/logs/ozstar/{fieldname}/"
     else:
         bash_script_dir = outdir
-    bash_script_path = bash_script_dir + f"/kntrappipe_{fieldname}.sh"
+    bash_script_path = bash_script_dir + f"/kntrapsel_{fieldname}.sh"
 
     script_string = script_string.replace("pathoutname", bash_script_dir)
 
@@ -107,7 +107,7 @@ if __name__ == "__main__":
     quietmode = arguments["--quietmode"]
     # Required arguments
     fieldname = arguments["<fieldname>"]
-    run = arguments["<run>"]
+    runnumber = arguments["<runnumber>"]
     fitsextension = arguments["<fitsextension>"]
     # Optional arguments (with defaults set)
     kntrap_sel_path = arguments["--kntrap_sel_path"]
@@ -119,7 +119,7 @@ if __name__ == "__main__":
 
     _ = write_kntrap_bashscript(
         fieldname,
-        run,
+        runnumber,
         kntrap_sel_path=kntrap_sel_path,
         conda_env_name=conda_env_name,
         kntrap_data_dir=kntrap_data_dir,

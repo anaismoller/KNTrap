@@ -147,6 +147,7 @@ if __name__ == "__main__":
 
     # read files
     list_files = glob.glob(f"{args.path_field}/*/*{args.run}/*.forced.difflc.txt")
+    print(f"{len(list_files)} files found in {args.path_field} for run {args.run}")
 
     if args.test:
         print(list_files)
