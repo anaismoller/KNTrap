@@ -22,7 +22,7 @@ from utils import xmatch
 from utils import mag_color
 
 
-def setup_logging(logname):
+def setup_logging(logpathname):
     logger = None
 
     # Create logger using python logging module
@@ -38,7 +38,7 @@ def setup_logging(logname):
     logger.addHandler(logging_handler_err)
 
     # create file handler which logs even debug messages
-    fh = logging.FileHandler(f"logs/{logname}.log", mode="w")
+    fh = logging.FileHandler(f"{logpathname}", mode="w")
     fh.setLevel(logging.DEBUG)
     logger.addHandler(fh)
 
@@ -142,8 +142,9 @@ if __name__ == "__main__":
     os.makedirs(args.path_out, exist_ok=True)
     os.makedirs("logs/", exist_ok=True)
 
-    logname = f"{Path(args.path_field).stem}_{args.run}_preprocess"
-    logger = setup_logging(logname)
+    cwd = os.getcwd()
+    logpathname = f"{cwd}/logs/{Path(args.path_field).stem}_{args.run}_preprocess"
+    logger = setup_logging(logpathname)
 
     # read files
     list_files = glob.glob(f"{args.path_field}/*/*{args.run}/*.forced.difflc.txt")

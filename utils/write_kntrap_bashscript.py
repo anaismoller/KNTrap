@@ -40,7 +40,10 @@ cd PIPE_DATA_DIR
 source activate CONDA_ENV_NAME
 export PYTHONPATH=$PYTHONPATH:SRC_DIR
 
+echo "Launching python $src_dir /run.py --path_field $kntrap_data_dir / $fieldname --run $runnumber --path_out $pathoutname"
 python src_dir/run.py --path_field kntrap_data_dir/fieldname --run runnumber --path_out pathoutname
+
+echo "Finished"
 
 """
 
