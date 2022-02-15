@@ -172,6 +172,8 @@ if __name__ == "__main__":
         num_chunks = num_elem // 10 + 1
         list_chunks = np.array_split(np.arange(num_elem), num_chunks)
 
+        logger.info(f"Dividing processing in {num_chunks} chunks")
+
         process_fn_file = partial(process_single_file)
 
         list_fn = []
@@ -187,10 +189,12 @@ if __name__ == "__main__":
                 list_processed += list(executor.map(process_fn, list_pairs))
 
         df = pd.concat(list_processed)
+    logger.info("Start xmatch")
     # x match
     z, sptype, typ, ctlg = xmatch.cross_match_simbad(
         df["id"].to_list(), df["ra"].to_list(), df["dec"].to_list()
     )
+    logger.info("Finished xmatch")
 
     # save in df
     df["simbad_type"] = typ
@@ -198,5 +202,8 @@ if __name__ == "__main__":
     df["simbad_sptype"] = sptype
     df["simbad_redshift"] = z
 
-    outname = str(Path(args.path_field).stem)
-    df.to_csv(f"{args.path_out}/{outname}_{args.run}.csv", index=False)
+    outprefix = str(Path(args.path_field).stem)
+    outname = f"{args.path_out}/{outprefix}_{args.run}.csv"
+    df.to_csv(outname, index=False)
+
+    logger.info(f"Saved output {outname}")
