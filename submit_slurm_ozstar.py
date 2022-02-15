@@ -43,8 +43,8 @@ __date__ = "2021-02-15"
 batch_script_template = """#!/bin/bash
 
 #SBATCH --job-name=JOB_NAME
-#SBATCH --output=/KNTRAP_SELECTION_DIR/logs/kntrappipe_JOB_NAME.out
-#SBATCH --error=/KNTRAP_SELECTION_DIR/logs/kntrappipe_JOB_NAME.err
+#SBATCH --output=KNTRAP_SEL_DIR/logs/kntrappipe_JOB_NAME.out
+#SBATCH --error=KNTRAP_SEL_DIR/logs/kntrappipe_JOB_NAME.err
 
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=1
@@ -55,8 +55,8 @@ RESERVATION_LINE
 
 echo Slurm Job JOB_NAME start
 echo Job bash script is: JOB_BASH_SCRIPT
-echo Job .out is saved at: /KNTRAP_SELECTION_DIR/logs/JOB_NAME.out
-echo Job .err is saved at: /KNTRAP_SELECTION_DIR/logs/JOB_NAME.err
+echo Job .out is saved at: KNTRAP_SEL_DIR/logs/JOB_NAME.out
+echo Job .err is saved at: KNTRAP_SEL_DIR/logs/JOB_NAME.err
 echo `date`
 SECONDS=0
 echo -------- --------
@@ -113,6 +113,7 @@ def submit_slurm_ozstar(
     script_string = batch_script_template.replace("JOB_NAME", slurm_job_name)
     script_string = script_string.replace("PIPE_DATA_DIR", kntrap_data_dir)
     script_string = script_string.replace("JOB_BASH_SCRIPT", kntrap_bashscript_path)
+    script_string = script_string.replace("KNTRAP_SEL_DIR", kntrap_sel_path)
     script_string = script_string.replace("FIELDNAME", fieldname)
     script_string = script_string.replace("RUNNUMBER", runnumber)
     if ozstar_reservation == None:
