@@ -2,7 +2,7 @@
 
 """ submit_slurm_ozstar.py -- Input fieldname, runnumber, create a bash shell script to run the entire KNTraP pipeline, and submit it as a slurm job on OzStar. 
 
-Usage: submit_slurm_ozstar [-h] [-q] [-v] [--debug] [--overwrite] [--do_not_submit] [--kntrap_sel_path STRING] [--conda_env_name STRING] [--kntrap_data_dir STRING] [--outdir STRING] [--ozstar_reservation STRING] <fieldname> <runnumber>
+Usage: submit_slurm_ozstar [-h] [-q] [-v] [--debug] [--overwrite] [--do_not_submit] [--kntrap_sel_path STRING] [--conda_env_name STRING] [--kntrap_data_dir STRING] [--outdir STRING] [--pathout STRING] [--ozstar_reservation STRING] <fieldname> <runnumber>
 
 Arguments:
     fieldname (string)
@@ -19,6 +19,7 @@ Options:
     --conda_env_name STRING             Python conda environment name [default: anais]
     --kntrap_data_dir STRING            KNTraP data and working directory [default: /fred/oz100/NOAO_archive/KNTraP_Project/photpipe/v20.0/DECAMNOAO/KNTraP/web/web/sniff/]
     --outdir STRING                     Output the bash script here. If not set, will output in kntrap_data_dir/logs/ozstar/<fieldname>_<run>
+    --pathout STRING                   Output the processed data [default: /fred/oz100/NOAO_archive/KNTraP_Project/photpipe/v20.0/DECAMNOAO/KNTraP/KNTrap_selection/Fink_outputs]
     --ozstar_reservation STRING         If set, in sbatch script put #SBATCH --reservation={ozstar_reservation}
 
 Examples:
@@ -74,6 +75,7 @@ def submit_slurm_ozstar(
     conda_env_name="kntrap",
     kntrap_data_dir="/fred/oz100/NOAO_archive/KNTraP_Project/photpipe/v20.0/DECAMNOAO/KNTraP/web/web/sniff/",
     outdir=None,
+    pathout="/fred/oz100/NOAO_archive/KNTraP_Project/photpipe/v20.0/DECAMNOAO/KNTraP/KNTrap_selection/Fink_outputs/",
     ozstar_reservation=None,
     verbose=False,
     debugmode=False,
@@ -94,6 +96,7 @@ def submit_slurm_ozstar(
         debugmode=debugmode,
         quietmode=quietmode,
         overwrite=overwrite,
+        pathout=pathout,
     )  # overwrite function not implemented yet
 
     # Define slurm job name
@@ -173,6 +176,7 @@ if __name__ == "__main__":
     conda_env_name = arguments["--conda_env_name"]
     kntrap_data_dir = arguments["--kntrap_data_dir"]
     outdir = arguments["--outdir"]
+    pathout = arguments["--pathout"]
     ozstar_reservation = arguments["--ozstar_reservation"]
     # Not implemented arguments (to be implemented later)
     overwrite = arguments["--overwrite"]
@@ -184,6 +188,7 @@ if __name__ == "__main__":
         conda_env_name=conda_env_name,
         kntrap_data_dir=kntrap_data_dir,
         outdir=outdir,
+        pathout=pathout,
         ozstar_reservation=ozstar_reservation,
         verbose=verbose,
         debugmode=debugmode,
