@@ -39,7 +39,7 @@ cd PIPE_DATA_DIR
 source activate CONDA_ENV_NAME
 export PYTHONPATH=$PYTHONPATH:SRC_DIR
 
-python src_dir/run.py --path_field kntrap_data_dir/fieldname --run runnumber
+python src_dir/run.py --path_field kntrap_data_dir/fieldname --run runnumber --path_out pathoutname
 
 """
 
@@ -72,6 +72,8 @@ def write_kntrap_bashscript(
     else:
         bash_script_dir = outdir
     bash_script_path = bash_script_dir + f"/kntrappipe_{fieldname}.sh"
+
+    script_string = script_string.replace("pathoutname", bash_script_dir)
 
     # Create output directory if not exist
     os.makedirs(bash_script_dir, exist_ok=True)
