@@ -15,7 +15,7 @@ Options:
     --debug                             Print debugging info to screen. [default: False]
     --overwrite                         Overwrite any existing files at destination [default: False]
     --do_not_submit                     Just write the slurm script and pipeline bash scripts, don't submit via sbatch [default: False]
-    --kntrap_sel_path STRING            Where src for KNTraP project lives [default: /fred/oz100/NOAO_archive/KNTraP_Project/src/KNTraP/]
+    --kntrap_sel_path STRING            Where src for KNTraP project lives [default: /fred/oz100/NOAO_archive/KNTraP_Project/photpipe/v20.0/DECAMNOAO/KNTraP/KNTrap_selection]
     --conda_env_name STRING             Python conda environment name [default: anais]
     --kntrap_data_dir STRING            KNTraP data and working directory [default: /fred/oz100/NOAO_archive/KNTraP_Project/kntrappipe]
     --outdir STRING                     Output the bash script here. If not set, will output in kntrap_data_dir/logs/ozstar/<fieldname>_<run>
