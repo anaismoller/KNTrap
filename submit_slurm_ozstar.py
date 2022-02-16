@@ -70,7 +70,7 @@ echo Slurm Job JOB_NAME done in $(($duration / 60)) minutes and $(($duration % 6
 
 def submit_slurm_ozstar(
     fieldname,
-    run,
+    runnumber,
     kntrap_sel_path="/fred/oz100/NOAO_archive/KNTraP_Project/photpipe/v20.0/DECAMNOAO/KNTraP/KNTrap_selection",
     conda_env_name="kntrap",
     kntrap_data_dir="/fred/oz100/NOAO_archive/KNTraP_Project/photpipe/v20.0/DECAMNOAO/KNTraP/web/web/sniff/",
