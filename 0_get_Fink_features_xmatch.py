@@ -57,7 +57,6 @@ def process_single_file(fname):
         if set(["ra", "dec"]).issubset(df_tmp.keys()):
             # get id
             idx = Path(fname).stem.replace(".forced.difflc", "")
-
             # get ra,dec, idx for xmatch
             ra_tmp, dec_tmp = df_tmp["ra"][0], df_tmp["dec"][0]
             # convert to degrees
@@ -198,24 +197,8 @@ if __name__ == "__main__":
     # add ROBOT scores
     robot_path = f"{args.path_robot}/ROBOT_masterlist_run_{args.run}.csv"
     if Path(robot_path).exists():
-        df_robot = pd.read_csv(
-            robot_path,
-            delimiter=",",
-            usecols=["Cand_ID", "Median_ROBOT_g", "Median_ROBOT_i", "Std_ROBOT_g",],
-            index_col=None,
-            skipinitialspace=True,
-        )
-        # when df is fixed maybe this is not necessary
-        df_robot = df_robot.rename(
-            columns={
-                "Cand_ID": "Median_ROBOT_g",
-                "Median_ROBOT_g": "Median_ROBOT_i",
-                "Median_ROBOT_i": "Std_ROBOT_g",
-                "Std_ROBOT_g": "Std_ROBOT_i",
-            }
-        )
-        df_robot["id"] = df_robot.index
-
+        df_robot = pd.read_csv(robot_path, delimiter=";",)
+        df_robot = df_robot.rename(columns={"Cand_ID": "id"})
         df = pd.merge(df, df_robot, on="id", how="left")
     else:
         print("NO ROBOT MASTERLIST FOUND")
