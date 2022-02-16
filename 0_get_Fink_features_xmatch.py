@@ -98,7 +98,7 @@ def process_single_file(fname):
         else:
             df_out = pd.DataFrame()
     except Exception:
-        print("File corrupted or not readable", fname)
+        print("File corrupted or empty", fname)
         df_out = pd.DataFrame()
     return df_out
 
@@ -110,32 +110,25 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Compute candidate features + xmatch")
 
     parser.add_argument(
-        "--path_field",
+        "--path_field", type=str, default="data/S82sub8_tmpl", help="Path to field",
+    )
+    parser.add_argument(
+        "--run", type=int, default="12", help="Run number (int next to field/ccd)",
+    )
+    parser.add_argument(
+        "--path_out", type=str, default="./Fink_outputs", help="Path to outputs",
+    )
+    parser.add_argument(
+        "--path_robot",
         type=str,
-        default="./S82sub8_tmpl",
-        help="Path to field",
+        default="../ROBOT_masterlists",
+        help="Path to ROBOT outputs",
     )
     parser.add_argument(
-        "--run",
-        type=int,
-        default="12",
-        help="Run number (int next to field/ccd)",
+        "--debug", action="store_true", help="Debug: loop processing (slow)",
     )
     parser.add_argument(
-        "--path_out",
-        type=str,
-        default="./Fink_outputs",
-        help="Path to outputs",
-    )
-    parser.add_argument(
-        "--debug",
-        action="store_true",
-        help="Debug: loop processing (slow)",
-    )
-    parser.add_argument(
-        "--test",
-        action="store_true",
-        help="one file processed only",
+        "--test", action="store_true", help="one file processed only",
     )
     args = parser.parse_args()
 
@@ -201,6 +194,31 @@ if __name__ == "__main__":
     df["simbad_ctlg"] = ctlg
     df["simbad_sptype"] = sptype
     df["simbad_redshift"] = z
+
+    # add ROBOT scores
+    robot_path = f"{args.path_robot}/ROBOT_masterlist_run_{args.run}.csv"
+    if Path(robot_path).exists():
+        df_robot = pd.read_csv(
+            robot_path,
+            delimiter=",",
+            usecols=["Cand_ID", "Median_ROBOT_g", "Median_ROBOT_i", "Std_ROBOT_g",],
+            index_col=None,
+            skipinitialspace=True,
+        )
+        # when df is fixed maybe this is not necessary
+        df_robot = df_robot.rename(
+            columns={
+                "Cand_ID": "Median_ROBOT_g",
+                "Median_ROBOT_g": "Median_ROBOT_i",
+                "Median_ROBOT_i": "Std_ROBOT_g",
+                "Std_ROBOT_g": "Std_ROBOT_i",
+            }
+        )
+        df_robot["id"] = df_robot.index
+
+        df = pd.merge(df, df_robot, on="id", how="left")
+    else:
+        print("NO ROBOT MASTERLIST FOUND")
 
     outprefix = str(Path(args.path_field).stem)
     outname = f"{args.path_out}/{outprefix}_{args.run}.csv"
