@@ -35,21 +35,15 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Compute candidate features + xmatch")
 
     parser.add_argument(
-        "--path_out",
-        type=str,
-        default="./Fink_outputs",
-        help="Path to outputs",
+        "--path_out", type=str, default="./Fink_outputs", help="Path to outputs",
     )
     parser.add_argument(
-        "--fname",
-        type=str,
-        default="/S82sub8_59.12.csv",
-        help="Filename of features",
+        "--fname", type=str, default="/S82sub8_59.12.csv", help="Filename of features",
     )
     args = parser.parse_args()
 
     print(f"Filtering {args.fname}")
-    df = pd.read_csv(f"{args.path_out}/{args.fname}")
+    df = pd.read_csv(f"{args.path_out}/{args.fname}", delimiter=";")
 
     # keep only candidates that are unknown transients/close-by galaxy
     cut_simbad = df.simbad_type.isin(keep_cds)
@@ -64,5 +58,5 @@ if __name__ == "__main__":
     # tt = datetime.now()
     # date_to_print = tt.strftime("%Y%m%d")
     out_prefix = Path(args.fname).stem
-    df_sel.to_csv(f"{args.path_out}/selected_{out_prefix}.csv", index=False)
+    df_sel.to_csv(f"{args.path_out}/selected_{out_prefix}.csv", index=False, sep=";")
     print(f"Selected {len(df_sel)} from {len(df)}")

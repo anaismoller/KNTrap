@@ -222,6 +222,6 @@ if __name__ == "__main__":
 
     outprefix = str(Path(args.path_field).stem)
     outname = f"{args.path_out}/{outprefix}_{args.run}.csv"
-    df.to_csv(outname, index=False)
+    df.to_csv(outname, index=False, sep=";")
 
     logger.info(f"Saved output {outname}")
