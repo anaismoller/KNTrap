@@ -2,11 +2,11 @@
 
 """ submit_list_fiels_ozstar.py -- Input runnumber, fieldnames create a bash shell script to run the entire KNTraP pipeline, and submit it as a slurm job on OzStar. 
 
-Usage: submit_slurm_ozstar [-h] [-q] [-v] [--debug] [--overwrite] [--do_not_submit] [--kntrap_sel_path STRING] [--conda_env_name STRING] [--kntrap_data_dir STRING] [--outdir STRING] [--pathout STRING] [--ozstar_reservation STRING] <runnumber> <fieldnames>
+Usage: submit_slurm_ozstar [-h] [-q] [-v] [--debug] [--overwrite] [--do_not_submit] [--kntrap_sel_path STRING] [--conda_env_name STRING] [--kntrap_data_dir STRING] [--outdir STRING] [--pathout STRING] [--ozstar_reservation STRING] <fieldnames>  <runnumber>
 
 Arguments:
-    runnumber (string)
     fieldnames (string)
+    runnumber (string)
 
 Options:
     -h, --help                          Show this screen
@@ -41,8 +41,8 @@ if __name__ == "__main__":
     quietmode = arguments["--quietmode"]
     do_not_submit = arguments["--do_not_submit"]
     # Required arguments
-    runnumber = arguments["<runnumber>"]
     fieldnames = arguments["<fieldnames>"]
+    runnumber = arguments["<runnumber>"]
     # Optional arguments (with defaults set)
     kntrap_sel_path = arguments["--kntrap_sel_path"]
     conda_env_name = arguments["--conda_env_name"]
