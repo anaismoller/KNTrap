@@ -1,5 +1,6 @@
 import re
 import glob
+import shutil
 import argparse
 import pandas as pd
 from bs4 import BeautifulSoup
@@ -110,15 +111,20 @@ def replace_links(file_str, junk_path, new_path="/"):
 
 def process_file(
     in_path,
-    out_path,
     metadata,
     junk_path="https://stsci-transients.stsci.edu/[^/]*/",
     new_path="http://kntrap-bucket.s3-website-us-east-1.amazonaws.com/",
 ):
     print(f"Processing file {in_path}")
+
+    # keep a copy with old ordered data
+    shutil.copy(fname_html, fname_html.replace(".html", "_old.html"))
+
     file_str = build_ordered_file(in_path, metadata)
     file_str = replace_links(file_str, junk_path, new_path=new_path)
-    f = open(out_path, "w")
+
+    # save new file with same name
+    f = open(in_path, "w")
     f.write(file_str)
     f.close()
 
@@ -150,13 +156,9 @@ if __name__ == "__main__":
     metadata = pd.read_csv(fname_metadata, sep=";")
     metadata["rank"] = metadata.index.copy()
 
-    print("TO DO make global ccd")
-    ccd = 16
-    runnumber = 8
-    # change order in YSE piepline html
-    fname_html = f"{args.path_data}/{args.field}/{ccd}/{args.field.strip('_tmpl')}_{ccd}.{runnumber}/index.html"
-    out_fname_html = f"{args.path_data}/{args.field}/index_new.html"
-    process_file(fname_html, out_fname_html, metadata)
+    index_path_list = glob.glob(f"{args.path_data}/{args.field}/*/*/index.html")
+    for fname_html in index_path_list:
+        process_file(fname_html, metadata)
 
-    print(f"Finished new html {out_fname_html}")
+    print(f"Finished new html")
 
