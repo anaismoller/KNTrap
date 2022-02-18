@@ -150,6 +150,7 @@ if __name__ == "__main__":
     metadata = pd.read_csv(fname_metadata, sep=";")
     metadata["rank"] = metadata.index.copy()
 
+    print("TO DO make global ccd")
     ccd = 16
     runnumber = 8
     # change order in YSE piepline html
