@@ -47,7 +47,7 @@ if __name__ == "__main__":
 
     # keep only candidates that are unknown transients/close-by galaxy
     cut_simbad = df.simbad_type.isin(keep_cds)
-    cut_rate = (df.dmag_rate_r > 0.3) | (
+    cut_rate = (df.dmag_rate_g > 0.3) | (
         df.dmag_rate_i > 0.3
     )  # Andreoni et al. 2021 https://arxiv.org/abs/2104.06352
     # cut_new_det = df.ndet < 4  # number of detections

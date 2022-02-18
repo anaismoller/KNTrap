@@ -133,25 +133,25 @@ def last_color_rate(df_tmp):
             df_tmp, smooth_by=smooth_by
         )
 
-        max_mag_i = df_tmp[df_tmp["filter"] == 3]["magnitude"].max()
-        max_mag_r = df_tmp[df_tmp["filter"] == 2]["magnitude"].max()
+        max_mag_i = df_tmp[df_tmp["filter"] == 3]["magnitude"].min()
+        max_mag_g = df_tmp[df_tmp["filter"] == 1]["magnitude"].min()
 
-        dmag_i = dic_dmag[2][-1] if len(dic_dmag[2]) > 0 else np.nan
-        dmag_r = dic_dmag[3][-1] if len(dic_dmag[3]) > 0 else np.nan
-        dmag_rate_i = dic_rate[2][-1] if len(dic_rate[2]) > 0 else np.nan
-        dmag_rate_r = dic_rate[3][-1] if len(dic_rate[3]) > 0 else np.nan
+        dmag_i = dic_dmag[3][-1] if len(dic_dmag[3]) > 0 else np.nan
+        dmag_g = dic_dmag[1][-1] if len(dic_dmag[1]) > 0 else np.nan
+        dmag_rate_i = dic_rate[3][-1] if len(dic_rate[3]) > 0 else np.nan
+        dmag_rate_g = dic_rate[1][-1] if len(dic_rate[1]) > 0 else np.nan
         last_color = color[-1] if len(color) > 0 else np.nan
         color_avg = np.array(color).mean() if len(color) > 0 else np.nan
 
         return (
             dmag_i,
-            dmag_r,
-            dmag_rate_r,
+            dmag_g,
             dmag_rate_i,
+            dmag_rate_g,
             last_color,
             color_avg,
             max_mag_i,
-            max_mag_r,
+            max_mag_g,
         )
     else:
         return np.nan, np.nan, np.nan, np.nan, np.nan, np.nan

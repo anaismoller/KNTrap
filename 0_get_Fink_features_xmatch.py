@@ -67,13 +67,13 @@ def process_single_file(fname):
             # get color, dmag and rate
             (
                 dmag_i,
-                dmag_r,
-                dmag_rate_r,
+                dmag_g,
                 dmag_rate_i,
+                dmag_rate_g,
                 color,
                 color_avg,
                 max_mag_i,
-                max_mag_r,
+                max_mag_g,
             ) = mag_color.last_color_rate(df_tmp)
 
             ndet = len(df_tmp)
@@ -85,11 +85,11 @@ def process_single_file(fname):
             df_out["ra"] = [out_ra]
             df_out["dec"] = [out_dec]
             df_out["max_mag_i"] = [max_mag_i]
-            df_out["max_mag_"] = [max_mag_r]
+            df_out["max_mag_g"] = [max_mag_g]
             df_out["dmag_i"] = [dmag_i]
-            df_out["dmag_r"] = [dmag_r]
+            df_out["dmag_g"] = [dmag_g]
             df_out["dmag_rate_i"] = [dmag_rate_i]
-            df_out["dmag_rate_r"] = [dmag_rate_r]
+            df_out["dmag_rate_g"] = [dmag_rate_g]
             df_out["color"] = [color]
             df_out["color_avg"] = [color_avg]
             df_out["ndet"] = [ndet]
@@ -112,9 +112,6 @@ if __name__ == "__main__":
         "--path_field", type=str, default="data/S82sub8_tmpl", help="Path to field",
     )
     parser.add_argument(
-        "--run", type=int, default="12", help="Run number (int next to field/ccd)",
-    )
-    parser.add_argument(
         "--path_out", type=str, default="./Fink_outputs", help="Path to outputs",
     )
     parser.add_argument(
@@ -135,12 +132,12 @@ if __name__ == "__main__":
     os.makedirs("logs/", exist_ok=True)
 
     cwd = os.getcwd()
-    logpathname = f"{cwd}/logs/{Path(args.path_field).stem}_{args.run}_preprocess"
+    logpathname = f"{cwd}/logs/{Path(args.path_field).stem}_preprocess"
     logger = setup_logging(logpathname)
 
     # read files
-    list_files = glob.glob(f"{args.path_field}/*/*{args.run}/*.forced.difflc.txt")
-    print(f"{len(list_files)} files found in {args.path_field} for run {args.run}")
+    list_files = glob.glob(f"{args.path_field}/*/*/*.forced.difflc.txt")
+    print(f"{len(list_files)} files found in {args.path_field}")
 
     if args.test:
         print(list_files)
@@ -195,7 +192,8 @@ if __name__ == "__main__":
     df["simbad_redshift"] = z
 
     # add ROBOT scores
-    robot_path = f"{args.path_robot}/ROBOT_masterlist_run_{args.run}.csv"
+    print("ROBOT RUNS NEED TO BE UPDATED")
+    robot_path = f"{args.path_robot}/ROBOT_masterlist_run_6.csv"
     if Path(robot_path).exists():
         df_robot = pd.read_csv(robot_path, delimiter=";",)
         df_robot = df_robot.rename(columns={"Cand_ID": "id"})
@@ -204,7 +202,7 @@ if __name__ == "__main__":
         print("NO ROBOT MASTERLIST FOUND")
 
     outprefix = str(Path(args.path_field).stem)
-    outname = f"{args.path_out}/{outprefix}_{args.run}.csv"
+    outname = f"{args.path_out}/{outprefix}.csv"
     df.to_csv(outname, index=False, sep=";")
 
     logger.info(f"Saved output {outname}")
