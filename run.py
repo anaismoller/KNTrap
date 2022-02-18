@@ -15,6 +15,9 @@ if __name__ == "__main__":
         "--path_out", type=str, default="./Fink_outputs", help="Path to outputs",
     )
     parser.add_argument(
+        "--run", type=str, default="6", help="Run for ROBOT outputs",
+    )
+    parser.add_argument(
         "--debug", action="store_true", help="Debug: files processed in loop",
     )
     parser.add_argument(
@@ -30,7 +33,7 @@ if __name__ == "__main__":
     # 0. process data
     cmd = (
         "python -W ignore 0_get_Fink_features_xmatch.py "
-        f"--path_field {path_field} --path_out {path_out} "
+        f"--path_field {path_field} --path_out {path_out} --run {args.run}"
     )
     if args.debug:
         cmd += "--debug"

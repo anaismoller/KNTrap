@@ -121,6 +121,9 @@ if __name__ == "__main__":
         help="Path to ROBOT outputs",
     )
     parser.add_argument(
+        "--run", type=str, default="6", help="Run for ROBOT outputs",
+    )
+    parser.add_argument(
         "--debug", action="store_true", help="Debug: loop processing (slow)",
     )
     parser.add_argument(
@@ -192,8 +195,7 @@ if __name__ == "__main__":
     df["simbad_redshift"] = z
 
     # add ROBOT scores
-    print("ROBOT RUNS NEED TO BE UPDATED")
-    robot_path = f"{args.path_robot}/ROBOT_masterlist_run_6.csv"
+    robot_path = f"{args.path_robot}/ROBOT_masterlist_run_{args.run}.csv"
     if Path(robot_path).exists():
         df_robot = pd.read_csv(robot_path, delimiter=";",)
         df_robot = df_robot.rename(columns={"Cand_ID": "id"})
