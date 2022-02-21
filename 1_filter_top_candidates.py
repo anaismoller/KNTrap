@@ -1,6 +1,7 @@
 # Year 2022
 # Authors: Anais Möller based on fink-broker.org code
 
+import numpy as np
 import argparse
 import pandas as pd
 from datetime import datetime
@@ -47,13 +48,13 @@ if __name__ == "__main__":
 
     # keep only candidates that are unknown transients/close-by galaxy
     cut_simbad = df.simbad_type.isin(keep_cds)
-    cut_rate = (df.dmag_rate_g > 0.3) | (
-        df.dmag_rate_i > 0.3
+    cut_rate = (np.abs(df.dmag_rate_g) > 0.3) | (
+        np.abs(df.dmag_rate_i) > 0.3
     )  # Andreoni et al. 2021 https://arxiv.org/abs/2104.06352
+    cut_maglim = (df.min_mag_g < 23) | (df.min_mag_i < 23)
     # cut_new_det = df.ndet < 4  # number of detections
     # df_sel = df[cut_simbad & cut_rate & cut_new_det]
-    df_sel = df[cut_simbad & cut_rate]
-
+    df_sel = df[cut_simbad & cut_rate & cut_maglim]
     # add date tag
     # tt = datetime.now()
     # date_to_print = tt.strftime("%Y%m%d")

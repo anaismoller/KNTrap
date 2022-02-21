@@ -74,6 +74,8 @@ def process_single_file(fname):
                 color_avg,
                 max_mag_i,
                 max_mag_g,
+                min_mag_i,
+                min_mag_g,
             ) = mag_color.last_color_rate(df_tmp)
 
             ndet = len(df_tmp)
@@ -86,6 +88,8 @@ def process_single_file(fname):
             df_out["dec"] = [out_dec]
             df_out["max_mag_i"] = [max_mag_i]
             df_out["max_mag_g"] = [max_mag_g]
+            df_out["min_mag_i"] = [min_mag_i]
+            df_out["min_mag_g"] = [min_mag_g]
             df_out["dmag_i"] = [dmag_i]
             df_out["dmag_g"] = [dmag_g]
             df_out["dmag_rate_i"] = [dmag_rate_i]

@@ -133,8 +133,12 @@ def last_color_rate(df_tmp):
             df_tmp, smooth_by=smooth_by
         )
 
+        # remember mag is an inversed unit
         max_mag_i = df_tmp[df_tmp["filter"] == 3]["magnitude"].min()
         max_mag_g = df_tmp[df_tmp["filter"] == 1]["magnitude"].min()
+
+        min_mag_i = df_tmp[df_tmp["filter"] == 3]["magnitude"].max()
+        min_mag_g = df_tmp[df_tmp["filter"] == 1]["magnitude"].max()
 
         dmag_i = dic_dmag[3][-1] if len(dic_dmag[3]) > 0 else np.nan
         dmag_g = dic_dmag[1][-1] if len(dic_dmag[1]) > 0 else np.nan
@@ -152,6 +156,8 @@ def last_color_rate(df_tmp):
             color_avg,
             max_mag_i,
             max_mag_g,
+            min_mag_i,
+            min_mag_g,
         )
     else:
-        return np.nan, np.nan, np.nan, np.nan, np.nan, np.nan
+        return np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan
