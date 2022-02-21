@@ -51,7 +51,16 @@ if __name__ == "__main__":
     cut_rate = (np.abs(df.dmag_rate_g) > 0.3) | (
         np.abs(df.dmag_rate_i) > 0.3
     )  # Andreoni et al. 2021 https://arxiv.org/abs/2104.06352
-    cut_maglim = (df.min_mag_g < 23) | (df.min_mag_i < 23)
+
+    # magnitude limit depending on shallow or deep field
+    shallow_fields = ["353A", "353B", "353C", "257A", "SCVZ"]
+    if any(substring in args.fname for substring in shallow_fields):
+        print("Shallow field")
+        mag_threshold = 23
+    else:
+        print("Deep field")
+        mag_threshold = 24
+    cut_maglim = (df.min_mag_g < mag_threshold) | (df.min_mag_i < mag_threshold)
     # cut_new_det = df.ndet < 4  # number of detections
     # df_sel = df[cut_simbad & cut_rate & cut_new_det]
     df_sel = df[cut_simbad & cut_rate & cut_maglim]
