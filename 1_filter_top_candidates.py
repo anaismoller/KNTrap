@@ -55,14 +55,14 @@ if __name__ == "__main__":
     # magnitude limit depending on shallow or deep field
     shallow_fields = ["353A", "353B", "353C", "257A", "SCVZ"]
     if any(substring in args.fname for substring in shallow_fields):
-        print("Shallow field")
-        cut_maglim = df["all_mags_gt_23"] == False
+        print("Shallow field two_mags > 22.5")
+        cut_maglim = df["two_mags_gt_225"] == True
     else:
-        print("Deep field")
-        cut_maglim = df["all_mags_gt_24"] == False
-    # cut_new_det = df.ndet < 4  # number of detections
+        print("Deep field two_mags > 23.5")
+        cut_maglim = df["two_mags_gt_235"] == True
+    cut_new_det = df.ndet > 4  # number of detections from forced diff img
     # df_sel = df[cut_simbad & cut_rate & cut_new_det]
-    df_sel = df[cut_simbad & cut_rate & cut_maglim]
+    df_sel = df[cut_simbad & cut_rate & cut_maglim & cut_new_det]
     # add date tag
     # tt = datetime.now()
     # date_to_print = tt.strftime("%Y%m%d")

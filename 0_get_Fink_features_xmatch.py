@@ -80,7 +80,10 @@ def process_single_file(fname):
 
             # other features
             ndet = len(df_tmp)
-            tmp_mag = df_tmp[df_tmp["m"] != -1]["m"].values
+            tmp_mag = df_tmp[(df_tmp["m"] != -1) & (df_tmp["m"] != "-")][
+                "m"
+            ].values.astype(float)
+
             # clean
             del df_tmp
 
@@ -99,8 +102,8 @@ def process_single_file(fname):
             df_out["color"] = [color]
             df_out["color_avg"] = [color_avg]
             df_out["ndet"] = [ndet]
-            df_out["all_mags_gt_23"] = [np.all(tmp_mag > 23)]
-            df_out["all_mags_gt_24"] = [np.all(tmp_mag > 24)]
+            df_out["two_mags_gt_225"] = [len(np.where(tmp_mag < 22.5)[0]) >= 2]
+            df_out["two_mags_gt_235"] = [len(np.where(tmp_mag < 23.5)[0]) >= 2]
 
         else:
             df_out = pd.DataFrame()
@@ -189,6 +192,27 @@ if __name__ == "__main__":
                 list_processed += list(executor.map(process_fn, list_pairs))
 
         df = pd.concat(list_processed)
+
+    # print("NOT PARALLEL= UNFORCED PHOTOMETRY")
+    # list_files_un = glob.glob(f"{args.path_field}/*/*/*.unforced.difflc.txt")
+    # list_ndet_unforced = []
+    # if args.test:
+    #     list_files_un = [list_files_un[0]]
+    # for fil in list_files_un:
+    #     try:
+    #         df_tmp = Table.read(fil, format="ascii").to_pandas()
+    #         ndet_un = len(df_tmp)
+    #     except Exception:
+    #         ndet_un = np.nan
+    #     list_ndet_unforced.append(ndet_un)
+    # import ipdb
+
+    # ipdb.set_trace()
+    # df["ndet_unforced"] = list_ndet_unforced
+    # import ipdb
+
+    # ipdb.set_trace()
+
     logger.info("Start xmatch")
     # x match
     z, sptype, typ, ctlg = xmatch.cross_match_simbad(
