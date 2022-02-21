@@ -56,11 +56,10 @@ if __name__ == "__main__":
     shallow_fields = ["353A", "353B", "353C", "257A", "SCVZ"]
     if any(substring in args.fname for substring in shallow_fields):
         print("Shallow field")
-        mag_threshold = 23
+        cut_maglim = df["all_mags_gt_23"] == False
     else:
         print("Deep field")
-        mag_threshold = 24
-    cut_maglim = (df.min_mag_g < mag_threshold) | (df.min_mag_i < mag_threshold)
+        cut_maglim = df["all_mags_gt_24"] == False
     # cut_new_det = df.ndet < 4  # number of detections
     # df_sel = df[cut_simbad & cut_rate & cut_new_det]
     df_sel = df[cut_simbad & cut_rate & cut_maglim]

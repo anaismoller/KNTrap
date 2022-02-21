@@ -78,7 +78,9 @@ def process_single_file(fname):
                 min_mag_g,
             ) = mag_color.last_color_rate(df_tmp)
 
+            # other features
             ndet = len(df_tmp)
+            tmp_mag = df_tmp[df_tmp["m"] != -1]["m"].values
             # clean
             del df_tmp
 
@@ -97,6 +99,8 @@ def process_single_file(fname):
             df_out["color"] = [color]
             df_out["color_avg"] = [color_avg]
             df_out["ndet"] = [ndet]
+            df_out["all_mags_gt_23"] = [np.all(tmp_mag > 23)]
+            df_out["all_mags_gt_24"] = [np.all(tmp_mag > 24)]
 
         else:
             df_out = pd.DataFrame()
