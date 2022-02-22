@@ -63,7 +63,6 @@ def process_single_file(fname):
             coo = SkyCoord(ra_tmp, dec_tmp, unit=(u.hourangle, u.deg))
             out_ra = coo.ra.degree
             out_dec = coo.dec.degree
-
             # get color, dmag and rate
             (
                 dmag_i,
@@ -76,13 +75,12 @@ def process_single_file(fname):
                 max_mag_g,
                 min_mag_i,
                 min_mag_g,
+                df_tmp,
             ) = mag_color.last_color_rate(df_tmp)
 
             # other features
             ndet = len(df_tmp)
-            tmp_mag = df_tmp[(df_tmp["m"] != -1) & (df_tmp["m"] != "-")][
-                "m"
-            ].values.astype(float)
+            tmp_mag = df_tmp["magnitude"].values
 
             # clean
             del df_tmp
@@ -120,10 +118,16 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Compute candidate features + xmatch")
 
     parser.add_argument(
-        "--path_field", type=str, default="data/S82sub8_tmpl", help="Path to field",
+        "--path_field",
+        type=str,
+        default="data/S82sub8_tmpl",
+        help="Path to field",
     )
     parser.add_argument(
-        "--path_out", type=str, default="./Fink_outputs", help="Path to outputs",
+        "--path_out",
+        type=str,
+        default="./Fink_outputs",
+        help="Path to outputs",
     )
     parser.add_argument(
         "--path_robot",
@@ -132,13 +136,20 @@ if __name__ == "__main__":
         help="Path to ROBOT outputs",
     )
     parser.add_argument(
-        "--run", type=str, default="6", help="Run for ROBOT outputs",
+        "--run",
+        type=str,
+        default="6",
+        help="Run for ROBOT outputs",
     )
     parser.add_argument(
-        "--debug", action="store_true", help="Debug: loop processing (slow)",
+        "--debug",
+        action="store_true",
+        help="Debug: loop processing (slow)",
     )
     parser.add_argument(
-        "--test", action="store_true", help="one file processed only",
+        "--test",
+        action="store_true",
+        help="one file processed only",
     )
     args = parser.parse_args()
 
@@ -229,7 +240,10 @@ if __name__ == "__main__":
     # add ROBOT scores
     robot_path = f"{args.path_robot}/ROBOT_masterlist_run_{args.run}.csv"
     if Path(robot_path).exists():
-        df_robot = pd.read_csv(robot_path, delimiter=";",)
+        df_robot = pd.read_csv(
+            robot_path,
+            delimiter=";",
+        )
         df_robot = df_robot.rename(columns={"Cand_ID": "id"})
         df = pd.merge(df, df_robot, on="id", how="left")
     else:
@@ -238,5 +252,4 @@ if __name__ == "__main__":
     outprefix = str(Path(args.path_field).stem)
     outname = f"{args.path_out}/{outprefix}.csv"
     df.to_csv(outname, index=False, sep=";")
-
     logger.info(f"Saved output {outname}")

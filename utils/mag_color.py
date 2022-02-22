@@ -110,6 +110,7 @@ def last_color_rate(df_tmp):
 
     Return:
     - dmag_i : last delta magnitude in i
+    - df_tmp: formatted
     """
 
     # If daily cadence then = rate
@@ -119,6 +120,7 @@ def last_color_rate(df_tmp):
         # eliminate empty mags
         df_tmp = df_tmp[df_tmp["m"] != "-"]
         df_tmp["magnitude"] = df_tmp["m"].astype(np.float).copy()
+        df_tmp = df_tmp[df_tmp["magnitude"] > 10]  # to avoid missing mags
 
         # variable reformatting
         t = Time(df_tmp["dateobs"].to_list(), format="isot", scale="utc")
@@ -158,6 +160,7 @@ def last_color_rate(df_tmp):
             max_mag_g,
             min_mag_i,
             min_mag_g,
+            df_tmp,
         )
     else:
         return np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan
