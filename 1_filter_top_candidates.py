@@ -36,10 +36,16 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Compute candidate features + xmatch")
 
     parser.add_argument(
-        "--path_out", type=str, default="./Fink_outputs", help="Path to outputs",
+        "--path_out",
+        type=str,
+        default="./Fink_outputs",
+        help="Path to outputs",
     )
     parser.add_argument(
-        "--fname", type=str, default="/S82sub8_59.12.csv", help="Filename of features",
+        "--fname",
+        type=str,
+        default="/S82sub8_59.12.csv",
+        help="Filename of features",
     )
     args = parser.parse_args()
 
@@ -60,7 +66,8 @@ if __name__ == "__main__":
     else:
         print("Deep field two_mags > 23.5")
         cut_maglim = df["two_mags_gt_235"] == True
-    cut_new_det = df.ndet > 4  # number of detections from forced diff img
+    # cut_new_det = df.ndet > 4  # number of detections from forced diff img
+    cut_new_det = df.ndet_unforced > 4  # number of detections from unforced diff img
     # df_sel = df[cut_simbad & cut_rate & cut_new_det]
     df_sel = df[cut_simbad & cut_rate & cut_maglim & cut_new_det]
     # add date tag
