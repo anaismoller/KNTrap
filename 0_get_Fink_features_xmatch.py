@@ -20,7 +20,8 @@ from concurrent.futures import ProcessPoolExecutor
 # my utils
 from utils import xmatch
 from utils import mag_color
-from utils import query_photoz_datalab as photoz
+
+# from utils import query_photoz_datalab as photoz
 
 
 def setup_logging(logpathname):
@@ -79,7 +80,8 @@ def read_file(fname, suffix=None):
 
     except Exception:
         print("File corrupted or empty", fname)
-        return pd.DataFrame()
+        df_tmp = pd.DataFrame()
+        return df_tmp
 
 
 def process_single_file(fname, suffix=".forced.difflc"):
@@ -114,7 +116,6 @@ def process_single_file(fname, suffix=".forced.difflc"):
             std_mag_g,
             df_tmp,
         ) = mag_color.last_color_rate(df_tmp)
-
         # other features
         ndet = len(df_tmp)
         tmp_mag = df_tmp["magnitude"].values
@@ -248,7 +249,8 @@ if __name__ == "__main__":
     for fil in list_files_un:
         list_unforced.append(process_single_file(fil, suffix=".unforced.difflc"))
     df_unforced = pd.concat(list_unforced)
-    df = pd.merge(df, df_unforced, on="id")
+    if len(df_unforced) > 0:
+        df = pd.merge(df, df_unforced, on="id")
 
     logger.info("SIMBAD xmatch")
     z, sptype, typ, ctlg = xmatch.cross_match_simbad(
@@ -261,14 +263,14 @@ if __name__ == "__main__":
     df["simbad_sptype"] = sptype
     df["simbad_redshift"] = z
 
-    logger.info("Legacy Survey xmatch")
-    list_ls_df = []
-    for (idx, ra, dec) in df[["id", "ra", "dec"]].values:
-        list_ls_df.append(photoz.query_coords_ls(idx, ra, dec, radius_arcsec=10))
-    df_ls = pd.concat(list_ls_df)
-    logger.info("Finished Legacy Survey xmatch")
-    df = pd.merge(df, df_ls, on="id")
-    #
+    # logger.info("Legacy Survey xmatch")
+    # list_ls_df = []
+    # for (idx, ra, dec) in df[["id", "ra", "dec"]].values:
+    #     list_ls_df.append(photoz.query_coords_ls(idx, ra, dec, radius_arcsec=10))
+    # df_ls = pd.concat(list_ls_df)
+    # logger.info("Finished Legacy Survey xmatch")
+    # df = pd.merge(df, df_ls, on="id")
+    # #
 
     # add ROBOT scores
     # You may need to add the field caldate format as Simon's output

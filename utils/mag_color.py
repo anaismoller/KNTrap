@@ -88,7 +88,6 @@ def extract_delta_color(pdf: pd.DataFrame, smooth_by: float):
     # take only nights with at least measurements on 2 different filters
     mask = gpdf["filter"].apply(lambda x: (len(x) > 1) & (np.sum(x) / len(x) != x[0]))
     gpdf_night = gpdf[mask]
-
     # compute i-g for those nights
     color_tmp = [
         i_minus_g(i, j)
@@ -122,55 +121,91 @@ def last_color_rate(df_tmp):
         df_tmp["magnitude"] = df_tmp["m"].astype(np.float).copy()
         df_tmp = df_tmp[df_tmp["magnitude"] > 10]  # to avoid missing mags
 
-        # variable reformatting
-        t = Time(df_tmp["dateobs"].to_list(), format="isot", scale="utc")
-        df_tmp["mjd"] = t.mjd.astype(float).copy()
-        df_tmp["filter"] = (
-            df_tmp["filt"]
-            .replace(to_replace=["g", "r", "i", "z"], value=[1, 2, 3, 4])
-            .copy()
-        )
+        if len(df_tmp) > 0:
+            # variable reformatting
+            t = Time(df_tmp["dateobs"].to_list(), format="isot", scale="utc")
+            df_tmp["mjd"] = t.mjd.astype(float).copy()
+            df_tmp["filter"] = (
+                df_tmp["filt"]
+                .replace(to_replace=["g", "r", "i", "z"], value=[1, 2, 3, 4])
+                .copy()
+            )
 
-        dic_dmag, dic_dmag_mjd, dic_rate, color, color_mjd = extract_delta_color(
-            df_tmp, smooth_by=smooth_by
-        )
+            dic_dmag, dic_dmag_mjd, dic_rate, color, color_mjd = extract_delta_color(
+                df_tmp, smooth_by=smooth_by
+            )
 
-        # remember mag is an inversed unit
-        max_mag_i = df_tmp[df_tmp["filter"] == 3]["magnitude"].min()
-        max_mag_g = df_tmp[df_tmp["filter"] == 1]["magnitude"].min()
+            # remember mag is an inversed unit
+            max_mag_i = df_tmp[df_tmp["filter"] == 3]["magnitude"].min()
+            max_mag_g = df_tmp[df_tmp["filter"] == 1]["magnitude"].min()
 
-        min_mag_i = df_tmp[df_tmp["filter"] == 3]["magnitude"].max()
-        min_mag_g = df_tmp[df_tmp["filter"] == 1]["magnitude"].max()
+            min_mag_i = df_tmp[df_tmp["filter"] == 3]["magnitude"].max()
+            min_mag_g = df_tmp[df_tmp["filter"] == 1]["magnitude"].max()
 
-        mean_mag_i = df_tmp[df_tmp["filter"] == 3]["magnitude"].mean()
-        mean_mag_g = df_tmp[df_tmp["filter"] == 1]["magnitude"].mean()
+            mean_mag_i = df_tmp[df_tmp["filter"] == 3]["magnitude"].mean()
+            mean_mag_g = df_tmp[df_tmp["filter"] == 1]["magnitude"].mean()
 
-        std_mag_i = df_tmp[df_tmp["filter"] == 3]["magnitude"].std()
-        std_mag_g = df_tmp[df_tmp["filter"] == 1]["magnitude"].std()
+            std_mag_i = df_tmp[df_tmp["filter"] == 3]["magnitude"].std()
+            std_mag_g = df_tmp[df_tmp["filter"] == 1]["magnitude"].std()
 
-        dmag_i = dic_dmag[3][-1] if len(dic_dmag[3]) > 0 else np.nan
-        dmag_g = dic_dmag[1][-1] if len(dic_dmag[1]) > 0 else np.nan
-        dmag_rate_i = dic_rate[3][-1] if len(dic_rate[3]) > 0 else np.nan
-        dmag_rate_g = dic_rate[1][-1] if len(dic_rate[1]) > 0 else np.nan
-        last_color = color[-1] if len(color) > 0 else np.nan
-        color_avg = np.array(color).mean() if len(color) > 0 else np.nan
+            dmag_i = dic_dmag[3][-1] if len(dic_dmag[3]) > 0 else np.nan
+            dmag_g = dic_dmag[1][-1] if len(dic_dmag[1]) > 0 else np.nan
+            dmag_rate_i = dic_rate[3][-1] if len(dic_rate[3]) > 0 else np.nan
+            dmag_rate_g = dic_rate[1][-1] if len(dic_rate[1]) > 0 else np.nan
+            last_color = color[-1] if len(color) > 0 else np.nan
+            color_avg = np.array(color).mean() if len(color) > 0 else np.nan
 
+            return (
+                dmag_i,
+                dmag_g,
+                dmag_rate_i,
+                dmag_rate_g,
+                last_color,
+                color_avg,
+                max_mag_i,
+                max_mag_g,
+                min_mag_i,
+                min_mag_g,
+                mean_mag_i,
+                mean_mag_g,
+                std_mag_i,
+                std_mag_g,
+                df_tmp,
+            )
+        else:
+            return (
+                np.nan,
+                np.nan,
+                np.nan,
+                np.nan,
+                np.nan,
+                np.nan,
+                np.nan,
+                np.nan,
+                np.nan,
+                np.nan,
+                np.nan,
+                np.nan,
+                np.nan,
+                np.nan,
+                df_tmp,
+            )
+
+    else:
         return (
-            dmag_i,
-            dmag_g,
-            dmag_rate_i,
-            dmag_rate_g,
-            last_color,
-            color_avg,
-            max_mag_i,
-            max_mag_g,
-            min_mag_i,
-            min_mag_g,
-            mean_mag_i,
-            mean_mag_g,
-            std_mag_i,
-            std_mag_g,
+            np.nan,
+            np.nan,
+            np.nan,
+            np.nan,
+            np.nan,
+            np.nan,
+            np.nan,
+            np.nan,
+            np.nan,
+            np.nan,
+            np.nan,
+            np.nan,
+            np.nan,
+            np.nan,
             df_tmp,
         )
-    else:
-        return np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan
