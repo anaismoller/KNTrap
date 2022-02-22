@@ -20,6 +20,7 @@ from concurrent.futures import ProcessPoolExecutor
 # my utils
 from utils import xmatch
 from utils import mag_color
+from utils import query_photoz_datalab as photoz
 
 
 def setup_logging(logpathname):
@@ -50,63 +51,103 @@ def process_fn(inputs):
     return fn(fil)
 
 
-def process_single_file(fname):
-    # read file and convert to pandas
+def read_file(fname, suffix=None):
     try:
         df_tmp = Table.read(fname, format="ascii").to_pandas()
-        if set(["ra", "dec"]).issubset(df_tmp.keys()):
-            # get id
-            idx = Path(fname).stem.replace(".forced.difflc", "")
-            # get ra,dec, idx for xmatch
-            ra_tmp, dec_tmp = df_tmp["ra"][0], df_tmp["dec"][0]
-            # convert to degrees
-            coo = SkyCoord(ra_tmp, dec_tmp, unit=(u.hourangle, u.deg))
-            out_ra = coo.ra.degree
-            out_dec = coo.dec.degree
-            # get color, dmag and rate
-            (
-                dmag_i,
-                dmag_g,
-                dmag_rate_i,
-                dmag_rate_g,
-                color,
-                color_avg,
-                max_mag_i,
-                max_mag_g,
-                min_mag_i,
-                min_mag_g,
-                df_tmp,
-            ) = mag_color.last_color_rate(df_tmp)
+        if "unforced" in suffix:
+            df_tmp[
+                [
+                    "MJD",
+                    "dateobs",
+                    "photcode",
+                    "filt",
+                    "flux_c",
+                    "dflux_c",
+                    "type",
+                    "chisqr",
+                    "ZPTMAG_c",
+                    "m",
+                    "dm",
+                    "ra",
+                    "dec",
+                    "cmpfile",
+                    "tmpl",
+                    "robot_score",
+                ]
+            ] = df_tmp.copy()
+        return df_tmp
 
-            # other features
-            ndet = len(df_tmp)
-            tmp_mag = df_tmp["magnitude"].values
-
-            # clean
-            del df_tmp
-
-            df_out = pd.DataFrame()
-            df_out["id"] = [idx]
-            df_out["ra"] = [out_ra]
-            df_out["dec"] = [out_dec]
-            df_out["max_mag_i"] = [max_mag_i]
-            df_out["max_mag_g"] = [max_mag_g]
-            df_out["min_mag_i"] = [min_mag_i]
-            df_out["min_mag_g"] = [min_mag_g]
-            df_out["dmag_i"] = [dmag_i]
-            df_out["dmag_g"] = [dmag_g]
-            df_out["dmag_rate_i"] = [dmag_rate_i]
-            df_out["dmag_rate_g"] = [dmag_rate_g]
-            df_out["color"] = [color]
-            df_out["color_avg"] = [color_avg]
-            df_out["ndet"] = [ndet]
-            df_out["two_mags_gt_225"] = [len(np.where(tmp_mag < 22.5)[0]) >= 2]
-            df_out["two_mags_gt_235"] = [len(np.where(tmp_mag < 23.5)[0]) >= 2]
-
-        else:
-            df_out = pd.DataFrame()
     except Exception:
         print("File corrupted or empty", fname)
+        return pd.DataFrame()
+
+
+def process_single_file(fname, suffix=".forced.difflc"):
+    # read file and convert to pandas
+    df_tmp = read_file(fname, suffix=suffix)
+
+    # process data if available
+    if len(df_tmp) > 0 and set(["ra", "dec"]).issubset(df_tmp.keys()):
+        # get id
+        idx = Path(fname).stem.replace(suffix, "")
+        # get ra,dec, idx for xmatch
+        ra_tmp, dec_tmp = df_tmp["ra"][0], df_tmp["dec"][0]
+        # convert to degrees
+        coo = SkyCoord(ra_tmp, dec_tmp, unit=(u.hourangle, u.deg))
+        out_ra = coo.ra.degree
+        out_dec = coo.dec.degree
+        # get color, dmag and rate
+        (
+            dmag_i,
+            dmag_g,
+            dmag_rate_i,
+            dmag_rate_g,
+            color,
+            color_avg,
+            max_mag_i,
+            max_mag_g,
+            min_mag_i,
+            min_mag_g,
+            mean_mag_i,
+            mean_mag_g,
+            std_mag_i,
+            std_mag_g,
+            df_tmp,
+        ) = mag_color.last_color_rate(df_tmp)
+
+        # other features
+        ndet = len(df_tmp)
+        tmp_mag = df_tmp["magnitude"].values
+
+        # clean
+        del df_tmp
+
+        df_out = pd.DataFrame()
+        df_out["id"] = [idx]
+        df_out["ra"] = [out_ra]
+        df_out["dec"] = [out_dec]
+        df_out["max_mag_i"] = [max_mag_i]
+        df_out["max_mag_g"] = [max_mag_g]
+        df_out["min_mag_i"] = [min_mag_i]
+        df_out["min_mag_g"] = [min_mag_g]
+        df_out["mean_mag_i"] = [mean_mag_i]
+        df_out["mean_mag_g"] = [mean_mag_g]
+        df_out["std_mag_i"] = [std_mag_i]
+        df_out["std_mag_g"] = [std_mag_g]
+        df_out["dmag_i"] = [dmag_i]
+        df_out["dmag_g"] = [dmag_g]
+        df_out["dmag_rate_i"] = [dmag_rate_i]
+        df_out["dmag_rate_g"] = [dmag_rate_g]
+        df_out["color"] = [color]
+        df_out["color_avg"] = [color_avg]
+        df_out["ndet"] = [ndet]
+        df_out["two_mags_gt_225"] = [len(np.where(tmp_mag < 22.5)[0]) >= 2]
+        df_out["two_mags_gt_235"] = [len(np.where(tmp_mag < 23.5)[0]) >= 2]
+
+        if "unforced" in suffix:
+            df_out = df_out.add_suffix("_unforced")
+            df_out = df_out.rename(columns={"id_unforced": "id"})
+    else:
         df_out = pd.DataFrame()
     return df_out
 
@@ -134,12 +175,6 @@ if __name__ == "__main__":
         type=str,
         default="../ROBOT_masterlists",
         help="Path to ROBOT outputs",
-    )
-    parser.add_argument(
-        "--run",
-        type=str,
-        default="6",
-        help="Run for ROBOT outputs",
     )
     parser.add_argument(
         "--debug",
@@ -206,39 +241,42 @@ if __name__ == "__main__":
 
     print("NOT PARALLEL= UNFORCED PHOTOMETRY")
     list_files_un = glob.glob(f"{args.path_field}/*/*/*.unforced.difflc.txt")
-    list_ndet_unforced = []
+    list_unforced = []
     list_idx = []
     if args.test:
         list_files_un = [list_files_un[0]]
     for fil in list_files_un:
-        try:
-            df_tmp = Table.read(fil, format="ascii").to_pandas()
-            ndet_un = len(df_tmp)
-        except Exception:
-            ndet_un = 0
-        list_ndet_unforced.append(ndet_un)
-        list_idx.append(Path(fil).stem.replace(".unforced.difflc", ""))
-    df_unforced = pd.DataFrame()
-    df_unforced["id"] = list_idx
-    df_unforced["ndet_unforced"] = list_ndet_unforced
-
+        list_unforced.append(process_single_file(fil, suffix=".unforced.difflc"))
+    df_unforced = pd.concat(list_unforced)
     df = pd.merge(df, df_unforced, on="id")
 
-    logger.info("Start xmatch")
-    # x match
+    logger.info("SIMBAD xmatch")
     z, sptype, typ, ctlg = xmatch.cross_match_simbad(
         df["id"].to_list(), df["ra"].to_list(), df["dec"].to_list()
     )
-    logger.info("Finished xmatch")
-
+    logger.info("Finished SIMBAD xmatch")
     # save in df
     df["simbad_type"] = typ
     df["simbad_ctlg"] = ctlg
     df["simbad_sptype"] = sptype
     df["simbad_redshift"] = z
 
+    logger.info("Legacy Survey xmatch")
+    list_ls_df = []
+    for (idx, ra, dec) in df[["id", "ra", "dec"]].values:
+        list_ls_df.append(photoz.query_coords_ls(idx, ra, dec, radius_arcsec=10))
+    df_ls = pd.concat(list_ls_df)
+    logger.info("Finished Legacy Survey xmatch")
+    df = pd.merge(df, df_ls, on="id")
+    #
+
     # add ROBOT scores
-    robot_path = f"{args.path_robot}/ROBOT_masterlist_run_{args.run}.csv"
+    # You may need to add the field caldate format as Simon's output
+    # TO DO these next lines should give you that
+    field = Path(args.path_field).stem
+    caldate = Path(args.path_field).parent.stem
+    # TO DO just change the name here
+    robot_path = f"{args.path_robot}/ROBOT_masterlist_{field}_{caldate}.csv"
     if Path(robot_path).exists():
         df_robot = pd.read_csv(
             robot_path,
@@ -247,7 +285,7 @@ if __name__ == "__main__":
         df_robot = df_robot.rename(columns={"Cand_ID": "id"})
         df = pd.merge(df, df_robot, on="id", how="left")
     else:
-        print("NO ROBOT MASTERLIST FOUND")
+        print(f"NO ROBOT MASTERLIST FOUND {robot_path}")
 
     outprefix = str(Path(args.path_field).stem)
     outname = f"{args.path_out}/{outprefix}.csv"

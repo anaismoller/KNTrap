@@ -142,6 +142,12 @@ def last_color_rate(df_tmp):
         min_mag_i = df_tmp[df_tmp["filter"] == 3]["magnitude"].max()
         min_mag_g = df_tmp[df_tmp["filter"] == 1]["magnitude"].max()
 
+        mean_mag_i = df_tmp[df_tmp["filter"] == 3]["magnitude"].mean()
+        mean_mag_g = df_tmp[df_tmp["filter"] == 1]["magnitude"].mean()
+
+        std_mag_i = df_tmp[df_tmp["filter"] == 3]["magnitude"].std()
+        std_mag_g = df_tmp[df_tmp["filter"] == 1]["magnitude"].std()
+
         dmag_i = dic_dmag[3][-1] if len(dic_dmag[3]) > 0 else np.nan
         dmag_g = dic_dmag[1][-1] if len(dic_dmag[1]) > 0 else np.nan
         dmag_rate_i = dic_rate[3][-1] if len(dic_rate[3]) > 0 else np.nan
@@ -160,6 +166,10 @@ def last_color_rate(df_tmp):
             max_mag_g,
             min_mag_i,
             min_mag_g,
+            mean_mag_i,
+            mean_mag_g,
+            std_mag_i,
+            std_mag_g,
             df_tmp,
         )
     else:

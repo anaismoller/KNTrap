@@ -52,8 +52,13 @@ if __name__ == "__main__":
     print(f"Filtering {args.fname}")
     df = pd.read_csv(f"{args.path_out}/{args.fname}", delimiter=";")
 
+    #
+    # CUTS
+    #
     # keep only candidates that are unknown transients/close-by galaxy
     cut_simbad = df.simbad_type.isin(keep_cds)
+
+    # Cut on rate
     cut_rate = (np.abs(df.dmag_rate_g) > 0.3) | (
         np.abs(df.dmag_rate_i) > 0.3
     )  # Andreoni et al. 2021 https://arxiv.org/abs/2104.06352
@@ -66,13 +71,21 @@ if __name__ == "__main__":
     else:
         print("Deep field two_mags > 23.5")
         cut_maglim = df["two_mags_gt_235"] == True
+
+    # Number of detections
     # cut_new_det = df.ndet > 4  # number of detections from forced diff img
     cut_new_det = df.ndet_unforced > 4  # number of detections from unforced diff img
-    # df_sel = df[cut_simbad & cut_rate & cut_new_det]
+
+    # ADD HERE YOUR CUTS!!!
+    # to check available variables
+    # print(df.keys())
+    #
+    #
+
+    # ALL CUTS TOGETHER
     df_sel = df[cut_simbad & cut_rate & cut_maglim & cut_new_det]
-    # add date tag
-    # tt = datetime.now()
-    # date_to_print = tt.strftime("%Y%m%d")
+
+    # Save
     out_prefix = Path(args.fname).stem
     df_sel.to_csv(f"{args.path_out}/selected_{out_prefix}.csv", index=False, sep=";")
     print(f"Selected {len(df_sel)} from {len(df)}")
