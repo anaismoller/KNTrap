@@ -56,26 +56,15 @@ def read_file(fname, suffix=None):
     try:
         df_tmp = Table.read(fname, format="ascii").to_pandas()
         if "unforced" in suffix:
-            df_tmp[
-                [
-                    "MJD",
-                    "dateobs",
-                    "photcode",
-                    "filt",
-                    "flux_c",
-                    "dflux_c",
-                    "type",
-                    "chisqr",
-                    "ZPTMAG_c",
-                    "m",
-                    "dm",
-                    "ra",
-                    "dec",
-                    "cmpfile",
-                    "tmpl",
-                    "robot_score",
-                ]
-            ] = df_tmp.copy()
+            df = pd.read_table(fname, header=None, skiprows=1, delim_whitespace=True)
+            if len(df.columns) == 16:
+                df.columns = ['MJD','dateobs','photcode','filt','flux_c','dflux_c','type','chisqr',
+                              'ZPTMAG_c','m','dm','ra','dec','cmpfile','tmpl','ROBOT_score']
+            else:
+                df.columns = ['MJD','dateobs','photcode','filt','flux_c','dflux_c','type','chisqr',
+                             'ZPTMAG_c','m','dm','ra','dec','cmpfile','tmpl']
+                df['ROBOT_score']=np.nan
+            df_tmp = df.copy()
         return df_tmp
 
     except Exception:
@@ -275,10 +264,10 @@ if __name__ == "__main__":
     # add ROBOT scores
     # You may need to add the field caldate format as Simon's output
     # TO DO these next lines should give you that
-    field = Path(args.path_field).stem
-    caldate = Path(args.path_field).parent.stem
+    field = Path(args.path_field).stem.replace('_tmpl','')
+    caldate = Path(args.path_field).parent.parent.stem
     # TO DO just change the name here
-    robot_path = f"{args.path_robot}/ROBOT_masterlist_{field}_{caldate}.csv"
+    robot_path = f"{args.path_robot}/caldat{caldate}/{field}_{caldate}_masterlist.csv"
     if Path(robot_path).exists():
         df_robot = pd.read_csv(
             robot_path,

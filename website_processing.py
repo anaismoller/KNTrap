@@ -4,6 +4,7 @@ import shutil
 import argparse
 import pandas as pd
 from bs4 import BeautifulSoup
+import os
 
 """ Author Dougal Dobie
 
@@ -15,7 +16,10 @@ def build_ordered_file(filename, metadata):
     heading_format_str = (
         '<center><b><font color="black"><font size=+4>{}</font></font></b>\n'
     )
-
+    field_info = filename.split('/')[-2]
+    field_name = field_info.split('_')[0]
+    ccd_num = field_info.split('_')[1].split('.')[0]
+    run_num = field_info.split('_')[1].split('.')[1]
     # The HTML isn't well-formed, so we have to manually find key lines
     lines = open(filename, "r").readlines()
 
@@ -59,18 +63,45 @@ def build_ordered_file(filename, metadata):
     file_str = start_file_str
 
     all_priority = []
-
+    
+    incl_robot = False
+    if "ROBOT_scores_g" in metadata.columns:
+        incl_robot=True
     for group_name, df_group in metadata.groupby("rank"):
 
         file_str += heading_format_str.format(group_name)
         for i, row in df_group.iterrows():
-            cand_id = str(row["id"])
+            cand_name = str(row["id"])
+            cand_id = cand_name.split('_')[-1].replace('cand','')
+            fink_field_info = "_".join(cand_name.split('_')[0:2])
+            #print(fink_field_info, field_info)
+            
             if cand_id not in source_str_dict.keys():
                 continue
+            if field_info != fink_field_info:
+                continue
             source_lines = source_str_dict[cand_id]
-            add_robot_scores(source_lines, row["robot_str_g"], row["robot_str_i"])
-            file_str += "".join(source_lines)
-            all_priority.append(row["id"])
+            #if incl_robot:
+            #    add_robot_scores(source_lines, row["ROBOT_scores_g"], row["ROBOT_scores_i"])
+            if incl_robot:
+                temp = row["ROBOT_scores_g"]
+                if len(temp.replace('[','').replace(']',''))  > 0:
+                    robot_g_scores = [f'{float(x):0.3f}' for x in temp.replace('[','').replace(']','').split(',')]
+                else:
+                    robot_g_scores = temp
+                temp = row["ROBOT_scores_i"]
+                if len(temp.replace('[','').replace(']',''))  > 0:
+                    robot_i_scores = [f'{float(x):0.3f}' for x in temp.replace('[','').replace(']','').split(',')]
+                else:
+                    robot_i_scores = temp
+                add_robot_scores(source_lines, f"{robot_g_scores}", f"{robot_i_scores}")
+            source_text = "".join(source_lines)
+            
+            # Replace colours
+            source_text = source_text.replace("background-color:lightblue","background-color:#228B22")
+            
+            file_str += source_text
+            all_priority.append(cand_id)
         file_str += "</br></br></br></br></br>"
 
     file_str += heading_format_str.format("Other Sources")
@@ -116,15 +147,18 @@ def process_file(
     new_path="http://kntrap-bucket.s3-website-us-east-1.amazonaws.com/",
 ):
     print(f"Processing file {in_path}")
+    fname_html = in_path
 
     # keep a copy with old ordered data
-    shutil.copy(fname_html, fname_html.replace(".html", "_old.html"))
+    fname_html_old = fname_html.replace(".html", "_old.html")
+    if not os.path.isfile(fname_html_old):
+        shutil.copy(fname_html, fname_html_old)
 
-    file_str = build_ordered_file(in_path, metadata)
+    file_str = build_ordered_file(fname_html_old, metadata)
     file_str = replace_links(file_str, junk_path, new_path=new_path)
 
     # save new file with same name
-    f = open(in_path, "w")
+    f = open(fname_html, "w")
     f.write(file_str)
     f.close()
 
@@ -154,10 +188,11 @@ if __name__ == "__main__":
     # read metadata
     fname_metadata = glob.glob(f"{args.path_metadata}/selected_{args.field}*.csv")[-1]
     metadata = pd.read_csv(fname_metadata, sep=";")
-    metadata["rank"] = metadata.index.copy()
+    metadata["rank"] = "Priority"#metadata.index.copy()
 
     index_path_list = glob.glob(f"{args.path_data}/{args.field}/*/*/index.html")
     for fname_html in index_path_list:
+        
         process_file(fname_html, metadata)
 
     print(f"Finished new html")
