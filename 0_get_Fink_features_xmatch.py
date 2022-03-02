@@ -21,7 +21,7 @@ from concurrent.futures import ProcessPoolExecutor
 from utils import xmatch
 from utils import mag_color
 
-# from utils import query_photoz_datalab as photoz
+from utils import query_photoz_datalab as photoz
 
 
 def setup_logging(logpathname):
@@ -58,12 +58,43 @@ def read_file(fname, suffix=None):
         if "unforced" in suffix:
             df = pd.read_table(fname, header=None, skiprows=1, delim_whitespace=True)
             if len(df.columns) == 16:
-                df.columns = ['MJD','dateobs','photcode','filt','flux_c','dflux_c','type','chisqr',
-                              'ZPTMAG_c','m','dm','ra','dec','cmpfile','tmpl','ROBOT_score']
+                df.columns = [
+                    "MJD",
+                    "dateobs",
+                    "photcode",
+                    "filt",
+                    "flux_c",
+                    "dflux_c",
+                    "type",
+                    "chisqr",
+                    "ZPTMAG_c",
+                    "m",
+                    "dm",
+                    "ra",
+                    "dec",
+                    "cmpfile",
+                    "tmpl",
+                    "ROBOT_score",
+                ]
             else:
-                df.columns = ['MJD','dateobs','photcode','filt','flux_c','dflux_c','type','chisqr',
-                             'ZPTMAG_c','m','dm','ra','dec','cmpfile','tmpl']
-                df['ROBOT_score']=np.nan
+                df.columns = [
+                    "MJD",
+                    "dateobs",
+                    "photcode",
+                    "filt",
+                    "flux_c",
+                    "dflux_c",
+                    "type",
+                    "chisqr",
+                    "ZPTMAG_c",
+                    "m",
+                    "dm",
+                    "ra",
+                    "dec",
+                    "cmpfile",
+                    "tmpl",
+                ]
+                df["ROBOT_score"] = np.nan
             df_tmp = df.copy()
         return df_tmp
 
@@ -149,16 +180,10 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Compute candidate features + xmatch")
 
     parser.add_argument(
-        "--path_field",
-        type=str,
-        default="data/S82sub8_tmpl",
-        help="Path to field",
+        "--path_field", type=str, default="data/S82sub8_tmpl", help="Path to field",
     )
     parser.add_argument(
-        "--path_out",
-        type=str,
-        default="./Fink_outputs",
-        help="Path to outputs",
+        "--path_out", type=str, default="./Fink_outputs", help="Path to outputs",
     )
     parser.add_argument(
         "--path_robot",
@@ -167,14 +192,10 @@ if __name__ == "__main__":
         help="Path to ROBOT outputs",
     )
     parser.add_argument(
-        "--debug",
-        action="store_true",
-        help="Debug: loop processing (slow)",
+        "--debug", action="store_true", help="Debug: loop processing (slow)",
     )
     parser.add_argument(
-        "--test",
-        action="store_true",
-        help="one file processed only",
+        "--test", action="store_true", help="one file processed only",
     )
     args = parser.parse_args()
 
@@ -239,7 +260,7 @@ if __name__ == "__main__":
         list_unforced.append(process_single_file(fil, suffix=".unforced.difflc"))
     df_unforced = pd.concat(list_unforced)
     if len(df_unforced) > 0:
-        df = pd.merge(df, df_unforced, on="id")
+        df = pd.merge(df, df_unforced, on="id", how="left")
 
     logger.info("SIMBAD xmatch")
     z, sptype, typ, ctlg = xmatch.cross_match_simbad(
@@ -252,27 +273,63 @@ if __name__ == "__main__":
     df["simbad_sptype"] = sptype
     df["simbad_redshift"] = z
 
-    # logger.info("Legacy Survey xmatch")
-    # list_ls_df = []
-    # for (idx, ra, dec) in df[["id", "ra", "dec"]].values:
-    #     list_ls_df.append(photoz.query_coords_ls(idx, ra, dec, radius_arcsec=10))
-    # df_ls = pd.concat(list_ls_df)
-    # logger.info("Finished Legacy Survey xmatch")
-    # df = pd.merge(df, df_ls, on="id")
-    # #
+    logger.info("GAIA xmatch")
+    source, ragaia, decgaia, plx, plxerr, gmag, angdist = xmatch.cross_match_gaia(
+        df["id"].to_list(),
+        df["ra"].to_list(),
+        df["dec"].to_list(),
+        ctlg="vizier:I/345/gaia2",
+    )
+    (
+        source_edr3,
+        ragaia_edr3,
+        decgaia_edr3,
+        plx_edr3,
+        plxerr_edr3,
+        gmag_edr3,
+        angdist_edr3,
+    ) = xmatch.cross_match_gaia(
+        df["id"].to_list(),
+        df["ra"].to_list(),
+        df["dec"].to_list(),
+        ctlg="vizier:I/350/gaiaedr3",
+    )
+
+    logger.info("Finished GAIA xmatch")
+    # save in df
+    df["gaia_DR2_source"] = source
+    df["gaia_DR2_ra"] = ragaia
+    df["gaia_DR2_dec"] = decgaia
+    df["gaia_DR2_parallax"] = plx
+    df["gaia_DR2_parallaxerr"] = plxerr
+    df["gaia_DR2_gmag"] = gmag
+    df["gaia_DR2_angdist"] = angdist
+    df["gaia_eDR3_source"] = source_edr3
+    df["gaia_eDR3_ra"] = ragaia_edr3
+    df["gaia_eDR3_dec"] = decgaia_edr3
+    df["gaia_eDR3_parallax"] = plx_edr3
+    df["gaia_eDR3_parallaxerr"] = plxerr_edr3
+    df["gaia_eDR3_gmag"] = gmag_edr3
+    df["gaia_eDR3_angdist"] = angdist_edr3
+
+    logger.info("Legacy Survey xmatch")
+    list_ls_df = []
+    for (idx, ra, dec) in df[["id", "ra", "dec"]].values:
+        list_ls_df.append(photoz.query_coords_ls(idx, ra, dec, radius_arcsec=10))
+    df_ls = pd.concat(list_ls_df)
+    logger.info("Finished Legacy Survey xmatch")
+    df = pd.merge(df, df_ls, on="id")
+    #
 
     # add ROBOT scores
     # You may need to add the field caldate format as Simon's output
     # TO DO these next lines should give you that
-    field = Path(args.path_field).stem.replace('_tmpl','')
+    field = Path(args.path_field).stem.replace("_tmpl", "")
     caldate = Path(args.path_field).parent.parent.stem
     # TO DO just change the name here
     robot_path = f"{args.path_robot}/caldat{caldate}/{field}_{caldate}_masterlist.csv"
     if Path(robot_path).exists():
-        df_robot = pd.read_csv(
-            robot_path,
-            delimiter=";",
-        )
+        df_robot = pd.read_csv(robot_path, delimiter=";",)
         df_robot = df_robot.rename(columns={"Cand_ID": "id"})
         df = pd.merge(df, df_robot, on="id", how="left")
     else:
@@ -282,3 +339,4 @@ if __name__ == "__main__":
     outname = f"{args.path_out}/{outprefix}.csv"
     df.to_csv(outname, index=False, sep=";")
     logger.info(f"Saved output {outname}")
+
