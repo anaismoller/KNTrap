@@ -312,6 +312,16 @@ if __name__ == "__main__":
     df["gaia_eDR3_gmag"] = gmag_edr3
     df["gaia_eDR3_angdist"] = angdist_edr3
 
+    logger.info("USNO-A.20 xmatch")
+    (source_usno, angdist_usno,) = xmatch.cross_match_usno(
+        df["id"].to_list(),
+        df["ra"].to_list(),
+        df["dec"].to_list(),
+        ctlg="vizier:I/252/out",
+    )
+    df["USNO_source"] = source_usno
+    df["USNO_angdist"] = angdist_usno
+
     logger.info("Legacy Survey xmatch")
     list_ls_df = []
     for (idx, ra, dec) in df[["id", "ra", "dec"]].values:
