@@ -44,13 +44,13 @@ if __name__ == "__main__":
     parser.add_argument(
         "--fname",
         type=str,
-        default="/S82sub8_59.12.csv",
+        default="353A_tmpl.pickle",
         help="Filename of features",
     )
     args = parser.parse_args()
 
     print(f"Filtering {args.fname}")
-    df = pd.read_csv(f"{args.path_out}/{args.fname}", delimiter=";")
+    df = pd.read_pickle(f"{args.path_out}/{args.fname}")
 
     #
     # CUTS
@@ -58,10 +58,11 @@ if __name__ == "__main__":
     # keep only candidates that are unknown transients/close-by galaxy
     cut_simbad = df.simbad_type.isin(keep_cds)
 
-    # Cut on rate
-    cut_rate = (np.abs(df.dmag_rate_g) > 0.3) | (
-        np.abs(df.dmag_rate_i) > 0.3
-    )  # Andreoni et al. 2021 https://arxiv.org/abs/2104.06352
+    # Cut on last rate
+    # Andreoni et al. 2021 https://arxiv.org/abs/2104.06352
+    df = df.assign(ireq=df.dmag_i.apply(lambda x: np.any(x > 0.3)))
+    df = df.assign(greq=df.dmag_g.apply(lambda x: np.any(x > 0.3)))
+    cut_rate = (df.greq == True) | (df.ireq == True)
 
     # magnitude limit depending on shallow or deep field
     shallow_fields = ["353A", "353B", "353C", "257A", "SCVZ"]

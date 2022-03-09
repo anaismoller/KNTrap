@@ -180,10 +180,16 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Compute candidate features + xmatch")
 
     parser.add_argument(
-        "--path_field", type=str, default="data/S82sub8_tmpl", help="Path to field",
+        "--path_field",
+        type=str,
+        default="data/S82sub8_tmpl",
+        help="Path to field",
     )
     parser.add_argument(
-        "--path_out", type=str, default="./Fink_outputs", help="Path to outputs",
+        "--path_out",
+        type=str,
+        default="./Fink_outputs",
+        help="Path to outputs",
     )
     parser.add_argument(
         "--path_robot",
@@ -192,10 +198,14 @@ if __name__ == "__main__":
         help="Path to ROBOT outputs",
     )
     parser.add_argument(
-        "--debug", action="store_true", help="Debug: loop processing (slow)",
+        "--debug",
+        action="store_true",
+        help="Debug: loop processing (slow)",
     )
     parser.add_argument(
-        "--test", action="store_true", help="one file processed only",
+        "--test",
+        action="store_true",
+        help="one file processed only",
     )
     args = parser.parse_args()
 
@@ -329,7 +339,6 @@ if __name__ == "__main__":
     df_ls = pd.concat(list_ls_df)
     logger.info("Finished Legacy Survey xmatch")
     df = pd.merge(df, df_ls, on="id")
-    #
 
     # add ROBOT scores
     # You may need to add the field caldate format as Simon's output
@@ -339,14 +348,18 @@ if __name__ == "__main__":
     # TO DO just change the name here
     robot_path = f"{args.path_robot}/caldat{caldate}/{field}_{caldate}_masterlist.csv"
     if Path(robot_path).exists():
-        df_robot = pd.read_csv(robot_path, delimiter=";",)
+        df_robot = pd.read_csv(
+            robot_path,
+            delimiter=";",
+        )
         df_robot = df_robot.rename(columns={"Cand_ID": "id"})
         df = pd.merge(df, df_robot, on="id", how="left")
     else:
         print(f"NO ROBOT MASTERLIST FOUND {robot_path}")
 
     outprefix = str(Path(args.path_field).stem)
-    outname = f"{args.path_out}/{outprefix}.csv"
-    df.to_csv(outname, index=False, sep=";")
+    # outname = f"{args.path_out}/{outprefix}.csv"
+    # df.to_csv(outname, index=False, sep=";")
+    outname = f"{args.path_out}/{outprefix}.pickle"
+    df.to_pickle(outname)
     logger.info(f"Saved output {outname}")
-
