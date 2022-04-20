@@ -1,11 +1,14 @@
 # Year 2022
-# Authors: Anais Möller based on fink-broker.org code
+# Based on fink-broker.org code
+# https://github.com/astrolabsoftware/fink-science/tree/master/fink_science/xmatch
+# Adapted by Anais Möller
 
 import io
 import csv
 import logging
 import requests
 import numpy as np
+import pandas as pd
 
 
 def generate_csv(s: str, lists: list) -> str:
@@ -605,3 +608,81 @@ def cross_match_usno(list_idx, list_ra, list_dec, ctlg="vizier:I/345/usno2"):
         xmatch_usno_source,
         xmatch_usno_angdist,
     )
+
+
+def cross_match_alerts_raw_generic(
+    oid: list, ra: list, dec: list, ctlg: str, distmaxarcsec: float
+) -> list:
+    """ Query the CDSXmatch service to find identified objects
+    in alerts. The catalog queried is the WISE database.
+    Parameters
+    ----------
+    oid: list of str
+        List containing object ids (custom)
+    ra: list of float
+        List containing object ra coordinates
+    dec: list of float
+        List containing object dec coordinates
+    dec: string
+        string with catalogue name
+    Returns
+    ----------
+    out: List of Tuple
+        Each tuple contains (objectId, ra, dec, sourcename ,angulardistance).
+        If the object is not found in usno, objectId, ra, dec, sourcename ,angulardistance
+        are marked as Unknown. In the case several objects match
+        the centroid of the alert, only the closest is returned.
+    Examples
+    ----------
+    >>> ra = [26.8566983, 26.24497]
+    >>> dec = [-26.9677112, -26.7569436]
+    >>> id = ["1", "2"]
+    >>> objects = cross_match_alerts_raw_usno(id, ra, dec)
+    """
+    if len(ra) == 0:
+        return []
+    # Catch TimeoutError and ConnectionError
+    try:
+        data, header = xmatch(
+            ra, dec, oid, extcatalog=ctlg, distmaxarcsec=distmaxarcsec
+        )
+    except (ConnectionError, TimeoutError, ValueError) as ce:
+        logging.warning("XMATCH failed " + repr(ce))
+        return []
+    # Sometimes the service is down, but without TimeoutError or ConnectionError
+    # In that case, we grab the error message from the data.
+    if len(data) > 0 and "504 Gateway Time-out" in data[0]:
+        msg_head = "CDS xmatch service probably down"
+        msg_foot = "Check at http://cdsxmatch.u-strasbg.fr/xmatch/api/v1/sync"
+        logging.warning(msg_head)
+        logging.warning(data[0])
+        logging.warning(msg_foot)
+        return []
+
+    data = [x.split(",") for x in data]
+    df_search_out = pd.DataFrame(data=np.array(data), columns=header)
+    if "angDist" not in df_search_out.keys():
+        print("Xmatch failure")
+        raise Exception
+    else:
+        df_search_out["angDist"] = df_search_out["angDist"].astype(float)
+        if ctlg == "vizier:II/358/smss":
+            df_search_out = df_search_out.rename(columns={"ObjectId": "ObjectId_SMSS"})
+        df_search_out = df_search_out.rename(columns={"objectId": "ObjectId"})
+        df_search_out_tmp = df_search_out.sort_values("angDist", ascending=True)
+        df_search_out_tmp = df_search_out_tmp.groupby("ObjectId").first()
+        df_search_out_tmp = df_search_out_tmp.rename(
+            columns={"ra": "ra_out", "dec": "dec_out"}
+        )
+
+        df_out_tmp = pd.DataFrame()
+        df_out_tmp["ObjectId"] = oid
+        df_out_tmp["ObjectId"] = df_out_tmp["ObjectId"].astype(str)
+        df_out_tmp["ra"] = ra
+        df_out_tmp["dec"] = dec
+
+        df_out = pd.merge(df_out_tmp, df_search_out_tmp, on="ObjectId", how="left")
+        df_out = df_out.fillna("Unknown")
+        df_out = df_out.drop(["ra_in", "dec_in"], axis=1)
+
+        return df_out
