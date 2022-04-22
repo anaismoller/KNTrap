@@ -41,7 +41,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--path_tns",
         type=str,
-        default="../tns_search-202101-0420_ra48-94_dec-70-4.csv",
+        default="../tns_search-202201-0422_ra59-239_dec-80-6.csv",
         help="Path to TNS dump to cross-match",
     )
     args = parser.parse_args()
@@ -197,31 +197,33 @@ if __name__ == "__main__":
         unit=(u.hourangle, u.deg),
     )
     # cross-match
+    # idx is size coo
+    # idx values are the matched coo_tns indeces
     idx, d2d, d3d = coo.match_to_catalog_sky(coo_tns, nthneighbor=1)
-
     # set separation length
     sep_constraint = d2d.arcmin < 5
-    catalog_matches = np.unique(df["ObjectId"].values[idx[sep_constraint]])
+
+    df_matches = pd.DataFrame(
+        {
+            "idx_df": np.arange(len(sep_constraint)),
+            "matched": sep_constraint,
+            "idx_tns": idx,
+        }
+    )
+    df_matches = df_matches[df_matches["matched"] == True]
+    df_tns["idx_tns"] = df_tns.index.values
+    df_matches = pd.merge(df_matches, df_tns, on="idx_tns")
+    df_matches = df_matches.rename(
+        columns={
+            col: col + "_tns"
+            for col in df_matches.columns
+            if col not in ["idx_tns", "idx_df"]
+        }
+    )
+
+    df["idx_df"] = df.index.values
 
     # identify position of matches in the input dataframe
-    pdf_matches = pd.DataFrame(
-        {"ObjectId": np.array(catalog_matches, dtype=np.int64), "match_TNS": True}
-    )
-    df = pd.merge(df, pdf_matches, how="left", on="ObjectId")
-
-    m = df["match_TNS"].apply(lambda x: x is True)
-    # Now get types for these
-    catalog_ztf_merge = SkyCoord(
-        ra=np.array(df.loc[m, "ra"].values, dtype=np.float) * u.degree,
-        dec=np.array(df.loc[m, "dec"].values, dtype=np.float) * u.degree,
-    )
-
-    # cross-match
-    idx2, d2d2, d3d2 = catalog_ztf_merge.match_to_catalog_sky(coo_tns)
-
-    df["TNS Name"] = "Unknown"
-    df.loc[m, "TNS Name"] = [
-        str(i).strip() for i in df_tns["Name"].astype(str).values[idx2]
-    ]
-
+    df = pd.merge(df, df_matches, how="left", on="idx_df")
+    df = df.drop(columns=["idx_tns", "idx_df"])
     df.to_csv(f"{args.path_out}/{Path(args.path_in).stem}_xmatched.csv")
